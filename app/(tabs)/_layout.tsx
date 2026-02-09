@@ -53,7 +53,7 @@ export default function TabLayout() {
           ),
         }}
       />
-      <Tabs.Screen
+    {/*  <Tabs.Screen
         name="settings"
         options={{
           title: "Settings",
@@ -62,7 +62,7 @@ export default function TabLayout() {
             <Ionicons size={26} name="settings" color={color} />
           ),
         }}
-      />
+      />*/}
     </Tabs>
   );
 }
