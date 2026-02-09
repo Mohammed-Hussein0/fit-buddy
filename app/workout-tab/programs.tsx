@@ -65,8 +65,8 @@ const renderProgramItem = ({ item }: { item: Program }) => (
             contentContainerStyle={styles.listContent}
             renderItem={renderProgramItem}
             showsVerticalScrollIndicator={false}
-          />
-        </View>
+            />
+            </View>
   );
 }
 
@@ -75,7 +75,7 @@ const styles = StyleSheet.create({
   listContent: { paddingHorizontal: 20, paddingBottom: 120 },
   
   // Programs List
-  header: { paddingHorizontal: 20, marginBottom: 20 },
+  header: { paddingHorizontal: 20, marginBottom: 10 },
   headerTitle: { fontSize: 28, fontWeight: '800', color: '#000', letterSpacing: -1 },
   
   programCard: { 
