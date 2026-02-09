@@ -10,13 +10,11 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: "#ff0000",
-        tabBarInactiveTintColor: "#ffffff80",
+        tabBarInactiveTintColor: "#746c6c",
         // 1. STYLE THE TAB BAR HERE
         tabBarStyle: {
-          backgroundColor: '#1c1c1e', // Dark background (matches your white/red icons)
+          backgroundColor: '#ffffff', // Dark background (matches your white/red icons)
           borderTopWidth: 0,          // Remove the flat line at the top
-          borderTopLeftRadius: 25,    // Round the top left
-          borderTopRightRadius: 25,   // Round the top right
           height: 75,
           paddingTop:10,                 // A bit taller to accommodate the curves
           paddingBottom: 10, 
