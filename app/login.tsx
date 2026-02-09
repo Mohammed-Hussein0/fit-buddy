@@ -10,6 +10,7 @@ import {
   KeyboardAvoidingView,
   Platform
 } from 'react-native';
+import GoogleAuthButton from './components/GoogleAuthButton';
 import { supabase } from '../supabase'; 
 import { useRouter } from 'expo-router';
 
@@ -78,6 +79,18 @@ export default function LoginScreen() {
           <Text style={styles.buttonText}>Log In</Text>
         )}
       </TouchableOpacity>
+
+<View style={styles.container}>
+   {/* ... inputs ... */}
+   
+   <GoogleAuthButton />
+   
+   <View style={{ alignItems: 'center', marginVertical: 20 }}>
+      <Text style={{ color: '#999', fontWeight: '600' }}>OR</Text>
+   </View>
+
+   {/* ... email login button ... */}
+</View>
 
      <TouchableOpacity 
   style={styles.secondaryButton} 
