@@ -1,17 +1,11 @@
 import React, { useState } from 'react';
 import { 
   View, 
-  Text, 
-  StyleSheet, 
-  FlatList, 
-  Image, 
-  TouchableOpacity, 
   StatusBar,
   LayoutAnimation,
   Platform,
   UIManager
 } from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
 import DailySchedule from '../workout-tab/workoutSchedule';
 import ProgramScreen from '../workout-tab/programs';
 
