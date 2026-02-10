@@ -8,9 +8,11 @@ import {
   Alert, 
   ActivityIndicator,
   KeyboardAvoidingView,
-  Platform
+  Platform,
+  ScrollView,
+  SafeAreaView 
 } from 'react-native';
-import GoogleAuthButton from './components/GoogleAuthButton';
+import GoogleAuthButton from './components/GoogleAuthButton'; 
 import { supabase } from '../supabase'; 
 import { useRouter } from 'expo-router';
 
@@ -37,77 +39,98 @@ export default function LoginScreen() {
   }
 
   return (
-    <KeyboardAvoidingView 
-      behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
-    >
-      <View style={styles.headerContainer}>
-        <Text style={styles.headerTitle}>Welcome Back</Text>
-        <Text style={styles.headerSubtitle}>Sign in to continue your progress</Text>
-      </View>
-
-      <View style={styles.inputContainer}>
-        <Text style={styles.label}>EMAIL</Text>
-        <TextInput
-          style={styles.input}
-          onChangeText={(text) => setEmail(text)}
-          value={email}
-          placeholder="name@example.com"
-          placeholderTextColor="#999"
-          autoCapitalize="none"
-        />
-
-        <Text style={styles.label}>PASSWORD</Text>
-        <TextInput
-          style={styles.input}
-          onChangeText={(text) => setPassword(text)}
-          value={password}
-          secureTextEntry={true}
-          placeholder="Enter your password"
-          placeholderTextColor="#999"
-        />
-      </View>
-
-      <TouchableOpacity 
-        style={styles.button} 
-        onPress={signInWithEmail} 
-        disabled={loading}
+    // 1. SafeAreaView is the absolute root. It handles the notch and home bar.
+    <SafeAreaView style={styles.safeArea}>
+      
+      {/* 2. KeyboardAvoidingView sits inside. 
+           CRITICAL FIX: behavior is undefined for Android to prevent double-padding. */}
+      <KeyboardAvoidingView 
+        behavior={Platform.OS === "ios" ? "padding" : undefined}
+        style={styles.keyboardView}
       >
-        {loading ? (
-          <ActivityIndicator color="#fff" />
-        ) : (
-          <Text style={styles.buttonText}>Log In</Text>
-        )}
-      </TouchableOpacity>
+        
+        {/* 3. ScrollView handles the actual content movement */}
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent} 
+          showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
+        >
+          <View style={styles.innerContent}>
+            <View style={styles.headerContainer}>
+              <Text style={styles.headerTitle}>Welcome Back</Text>
+              <Text style={styles.headerSubtitle}>Sign in to continue your progress</Text>
+            </View>
 
-<View style={styles.container}>
-   {/* ... inputs ... */}
-   
-   <GoogleAuthButton />
-   
-   <View style={{ alignItems: 'center', marginVertical: 20 }}>
-      <Text style={{ color: '#999', fontWeight: '600' }}>OR</Text>
-   </View>
+            <View style={styles.inputContainer}>
+              <Text style={styles.label}>EMAIL</Text>
+              <TextInput
+                style={styles.input}
+                onChangeText={setEmail}
+                value={email}
+                placeholder="name@example.com"
+                placeholderTextColor="#999"
+                autoCapitalize="none"
+                keyboardType="email-address"
+              />
 
-   {/* ... email login button ... */}
-</View>
+              <Text style={styles.label}>PASSWORD</Text>
+              <TextInput
+                style={styles.input}
+                onChangeText={setPassword}
+                value={password}
+                secureTextEntry={true}
+                placeholder="Enter your password"
+                placeholderTextColor="#999"
+              />
+            </View>
 
-     <TouchableOpacity 
-  style={styles.secondaryButton} 
-  onPress={() => router.push('/signup')} // <--- Add this link
->
-  <Text style={styles.secondaryButtonText}>Don&apos;t have an account? Sign Up</Text>
-</TouchableOpacity>
-    </KeyboardAvoidingView>
+            <TouchableOpacity 
+              style={styles.button} 
+              onPress={signInWithEmail} 
+              disabled={loading}
+            >
+              {loading ? (
+                <ActivityIndicator color="#fff" />
+              ) : (
+                <Text style={styles.buttonText}>Log In</Text>
+              )}
+            </TouchableOpacity>
+
+            <View style={{ alignItems: 'center', marginVertical: 20 }}>
+              <Text style={{ color: '#999', fontWeight: '600' }}>OR</Text>
+            </View>
+
+            <GoogleAuthButton />
+
+            <TouchableOpacity 
+              style={styles.secondaryButton} 
+              onPress={() => router.push('/signup')}
+            >
+              <Text style={styles.secondaryButtonText}>Don&apos;t have an account? Sign Up</Text>
+            </TouchableOpacity>
+          </View>
+        </ScrollView>
+      </KeyboardAvoidingView>
+    </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
+  safeArea: {
     flex: 1,
     backgroundColor: '#fff',
+  },
+  keyboardView: {
+    flex: 1,
+  },
+  scrollContent: {
+    flexGrow: 1,
+  },
+  innerContent: {
+    flex: 1,
     paddingHorizontal: 24,
-    justifyContent: 'center',
+    justifyContent: 'center', // Keeps content centered when keyboard is CLOSED
+    paddingBottom: 30, // Small padding for bottom aesthetics
   },
   headerContainer: {
     marginBottom: 40,
@@ -147,10 +170,9 @@ const styles = StyleSheet.create({
   button: {
     backgroundColor: '#000',
     height: 56,
-    borderRadius: 28, // Fully rounded pill shape
+    borderRadius: 28,
     justifyContent: 'center',
     alignItems: 'center',
-    marginBottom: 20,
     shadowColor: "#000",
     shadowOffset: {
       width: 0,
@@ -168,6 +190,7 @@ const styles = StyleSheet.create({
   secondaryButton: {
     alignItems: 'center',
     padding: 10,
+    marginTop: 10,
   },
   secondaryButtonText: {
     color: '#666',

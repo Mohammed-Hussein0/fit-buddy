@@ -14,6 +14,8 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
+{/*
+
 // 1. Configure Google Sign-In
 GoogleSignin.configure({
   scopes: ['https://www.googleapis.com/auth/userinfo.profile', 'https://www.googleapis.com/auth/userinfo.email'],
@@ -40,4 +42,4 @@ export async function signInWithGoogle() {
   } catch (error) {
     return { error };
   }
-}
+} */}
