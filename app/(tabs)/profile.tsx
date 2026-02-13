@@ -5,6 +5,7 @@ import {
   ScrollView,
   StyleSheet,
   StatusBar,
+  ActivityIndicator
 } from "react-native";
 import Statsbar from "../profile-tab/stats-bar";
 import WeightChart from "../profile-tab/weight-progress";
@@ -12,31 +13,26 @@ import QuoteCard from "../profile-tab/quote-card";
 import ProfileInfo from "../profile-tab/profile-info";
 import DailyHabits from "../profile-tab/daily-habits";
 import { useAuth } from "../context/auth";
-
-// --- TYPES ---
+import { useUser } from "../context/UserInfo";
 
 export default function ProfileTab() {
+  // 1. Get Auth User (for email/metadata) and Profile Data (for weight/height)
+  const { user } = useAuth(); 
+  const { profile, loading } = useUser(); 
 
+  if (loading || !user) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator size="large" color="#000" />
+      </View>
+    );
+  }
 
-  // User Data
-  const User = {
-    username: "FitWarrior2024",
-    email: "alex.fitness@example.com",
-    joinDate: "Member since 2023",
-    stats: {
-      weight: "75.5",
-      workouts: "142",
-      streak: "12",
-      calories: "2,400",
-    },
-  };
-  
-  const { user } = useAuth(); // <--- Get the user data instantly!
-
-  if (!user) return <Text>Loading...</Text>;
-
-  // Accessing Metadata (like the username you saved during sign up)
-  const username = user.user_metadata?.username || 'User';
+  // 2. Format the real join date from Supabase
+  const joinDate = new Date(user.created_at).toLocaleDateString('en-US', {
+    month: 'long',
+    year: 'numeric'
+  });
 
   return (
     <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
@@ -46,27 +42,28 @@ export default function ProfileTab() {
       <View style={styles.header}>
 
         <ProfileInfo 
-        username={username}
-        email = {user.email??'placeholder'}
-        joinDate={User.joinDate}
+          username={user.user_metadata?.username || 'User'}
+          email={user.email || ''}
+          joinDate={joinDate} // <--- Now uses real date
         />
 
         {/* --- QUICK STATS GRID --- */}
         <Statsbar 
-
-        weight = {User.stats.weight}
-        workouts = {User.stats.workouts}
-        streak = {User.stats.streak}/>
+          // 3. Connect the LIVE weight from your settings!
+          weight={profile.currentWeight} 
+          
+          // These are placeholders for now until we build the workout tracker
+          workouts="12" 
+          streak="5"   
+        />
 
       </View>
 
       {/* --- CHART SECTION --- */}
       <WeightChart/>
 
-
       {/* --- DAILY HABITS --- */}
-
-    <DailyHabits/>
+      <DailyHabits/>
 
       {/* --- QUOTE CARD --- */}
       <QuoteCard/>
@@ -80,11 +77,10 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: "#fff",
   },
-  // Header
   header: {
     paddingTop: 60,
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
-
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
 });

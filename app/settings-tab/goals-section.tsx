@@ -3,9 +3,10 @@ import { View, StyleSheet } from 'react-native';
 import { SettingsItem, SectionHeader } from '../components/settings-item';
 
 // Define the FieldType here or import it from a shared types file
-type FieldType = 'currentWeight' | 'goalWeight' | 'height' | 'nutrition';
+type FieldType = 'gender'| 'currentWeight' | 'goalWeight' | 'height' | 'nutrition';
 
 interface GoalsSectionProps {
+  gender: 'Male' | 'Female' | 'Other' | 'Prefer not to say'; // Added Gender
   height: string;
   currentWeight: string;
   goalWeight: string;
@@ -14,11 +15,12 @@ interface GoalsSectionProps {
 }
 
 export default function GoalsSection({ 
-  height, currentWeight, goalWeight, nutrition, onEdit 
+  gender,height, currentWeight, goalWeight, nutrition, onEdit 
 }: GoalsSectionProps) {
   return (
     <View>
-      <SectionHeader title="MY GOALS" />
+      
+      <SectionHeader title="MY INFO" />
       <View style={styles.section}>
         <SettingsItem 
           icon="resize" 
@@ -32,6 +34,13 @@ export default function GoalsSection({
           value={`${currentWeight} kg`}
           onPress={() => onEdit('currentWeight', currentWeight)} 
         />
+        <SettingsItem 
+          icon="person" 
+          label="Gender" 
+          value={gender} 
+          onPress={() => onEdit('gender', gender)} 
+        />
+      <SectionHeader title="MY GOALS" />
         <SettingsItem 
           icon="flag" 
           label="Goal Weight" 

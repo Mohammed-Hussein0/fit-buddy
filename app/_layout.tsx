@@ -7,6 +7,7 @@ import 'react-native-reanimated';
 import { useColorScheme } from '@/hooks/use-color-scheme';
 import { View, ActivityIndicator } from 'react-native';
 import { AuthProvider } from './context/auth';
+import { UserProvider } from './context/UserInfo';
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
@@ -49,6 +50,7 @@ export default function RootLayout() {
 
   return (
     <AuthProvider>
+      <UserProvider>
     <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
       <Stack>
         <Stack.Screen name="login" options={{ headerShown: false }} />
@@ -64,6 +66,7 @@ export default function RootLayout() {
       </Stack>
       <StatusBar style="auto" />
     </ThemeProvider>
+    </UserProvider>
     </AuthProvider>
   );
 }

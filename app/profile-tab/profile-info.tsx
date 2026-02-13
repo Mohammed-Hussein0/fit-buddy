@@ -6,6 +6,8 @@ import {
   Animated,
   TouchableOpacity,
   Image,
+  Modal,
+  StatusBar
 } from "react-native";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import { useRouter } from "expo-router";
@@ -15,13 +17,23 @@ interface profileInfoProps {
   email: string;
   joinDate: string;
 }
+
 export default function ProfileInfo({
   username,
   email,
   joinDate,
 }: profileInfoProps) {
+  // 1. Existing State for Text Animation
   const [showEmail, setShowEmail] = useState(false);
   const [fadeAnim] = useState(new Animated.Value(1));
+
+  // 2. New State for Image Modal
+  const [modalVisible, setModalVisible] = useState(false);
+
+  const router = useRouter();
+  
+  // Hardcoded image source (so we can reuse it easily in both spots)
+  const profileImage = require("../../assets/images/Peak2.jpeg");
 
   useEffect(() => {
     const loop = setInterval(() => {
@@ -40,30 +52,32 @@ export default function ProfileInfo({
       ]).start();
 
       setTimeout(() => setShowEmail((prev) => !prev), 800);
-    }, 6000); // Slower, less distracting interval
+    }, 6000); 
     return () => clearInterval(loop);
   }, []);
-  const router = useRouter();
 
   return (
     <View style={styles.profileRow}>
-      <Image source={require("../../assets/images/Peak2.jpeg")}
-        style={styles.avatar}
-      />
+      
+      {/* 3. Wrap Avatar in TouchableOpacity to trigger Modal */}
+      <TouchableOpacity onPress={() => setModalVisible(true)} activeOpacity={0.8}>
+        <Image 
+          source={profileImage}
+          style={styles.avatar}
+        />
+      </TouchableOpacity>
+
       <View style={styles.profileInfo}>
         <View style={styles.badgeContainer}>
           <Text style={styles.badgeText}>PRO MEMBER</Text>
         </View>
 
-        {/* MODIFIED: Added automatic resizing props */}
-       <Animated.Text
+        <Animated.Text
           numberOfLines={1}
           adjustsFontSizeToFit={true}
-          minimumFontScale={0.4} // Allow it to shrink more if needed
+          minimumFontScale={0.4}
           style={[
-            // 1. Combine the base style here
             styles.dynamicText, 
-            // 2. Add the opacity animation
             { opacity: fadeAnim },
           ]}
         >
@@ -72,27 +86,42 @@ export default function ProfileInfo({
 
         <Text style={styles.joinDate}>{joinDate}</Text>
       </View>
+
       <TouchableOpacity
         style={styles.settingsBtn}
         onPress={() => router.push("/settings")}
       >
         <Ionicons name="settings-sharp" size={24} color="#000" />
       </TouchableOpacity>
+
+      {/* 4. The Full Screen Image Modal */}
+      <Modal
+        visible={modalVisible}
+        transparent={true}
+        animationType="fade"
+        onRequestClose={() => setModalVisible(false)}
+      >
+        <TouchableOpacity 
+          style={styles.modalOverlay} 
+          activeOpacity={1} 
+          onPress={() => setModalVisible(false)} // Close on background tap
+        >
+          <StatusBar backgroundColor="rgba(0,0,0,0.9)" barStyle="light-content" />
+          
+          <Image 
+            source={profileImage} 
+            style={styles.fullImage} 
+            resizeMode="contain" 
+          />
+        </TouchableOpacity>
+      </Modal>
+
     </View>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: "#fff",
-  },
-  // Header
-  header: {
-    paddingTop: 60,
-    paddingHorizontal: 20,
-    paddingBottom: 20,
-  },
+  // Your existing styles...
   profileRow: {
     flexDirection: "row",
     alignItems: "center",
@@ -127,11 +156,10 @@ const styles = StyleSheet.create({
     fontSize: 20,
     fontWeight: "800",
     color: "#000",
-    // THE FIX: Reserve exact vertical space
-    height: 28,      // Fixed height prevents the container from shrinking/growing
-    lineHeight: 28,  // Ensures text sits in the middle of that height
+    height: 28,
+    lineHeight: 28,
     marginBottom: 0,
-    marginRight:2 // consistent spacing below the text
+    marginRight: 2
   },
   joinDate: {
     fontSize: 12,
@@ -145,5 +173,18 @@ const styles = StyleSheet.create({
     backgroundColor: "#f8f8f8",
     justifyContent: "center",
     alignItems: "center",
+  },
+
+  // ...New Modal Styles
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.9)",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  fullImage: {
+    width: "90%",
+    height: 400,
+    borderRadius: 12,
   },
 });
