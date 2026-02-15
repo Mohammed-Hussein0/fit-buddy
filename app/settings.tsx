@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState } from 'react';
 import { 
   View, Text, StyleSheet, ScrollView, TouchableOpacity, 
   SafeAreaView, Alert, Modal, TextInput, KeyboardAvoidingView, 
-  Platform, TouchableWithoutFeedback, Keyboard, LayoutAnimation, UIManager 
+  Platform, TouchableWithoutFeedback, Keyboard, 
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { supabase } from '@/supabase';
@@ -18,9 +18,6 @@ import SupportSection from './settings-tab/support-section';
  // Check this path matches your structure!
 
 // Enable Animation on Android
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
-  UIManager.setLayoutAnimationEnabledExperimental(true);
-}
 
 export type FieldType = keyof UserProfile | null;
 
