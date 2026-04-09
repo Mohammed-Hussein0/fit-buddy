@@ -1,18 +1,17 @@
 import React, { useState } from 'react';
 import { 
   View, Text, StyleSheet, ScrollView, TouchableOpacity, 
-  SafeAreaView, Alert, Modal, TextInput, KeyboardAvoidingView, 
-  Platform, TouchableWithoutFeedback, Keyboard, 
+  SafeAreaView, Alert,
 } from 'react-native';
 import { Stack, useRouter } from 'expo-router';
 import { supabase } from '@/supabase';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import Slider from '@react-native-community/slider';
 import { UserProfile,useUser } from './context/UserInfo';
 // Your custom components
 import GoalsSection from './settings-tab/goals-section';
 import AppPreferences from './settings-tab/preferences-section';
 import SupportSection from './settings-tab/support-section';
+import SettingsEditModal from './settings-tab/modal';
 
 // Your Global Context
  // Check this path matches your structure!
@@ -55,7 +54,7 @@ export function useSettings() {
 
     // Validation
     if (editingField === 'height') {
-      if (isNaN(val) || val < 50 || val > 300) {
+      if (isNaN(val) || val < 50 || val > 250) {
         Alert.alert("Invalid Height", "Please enter a valid height in cm.");
         return; 
       }
@@ -165,96 +164,16 @@ export default function SettingsScreen() {
         <Text style={styles.versionText}>Version 1.0.9 • Build 2024</Text>
       </ScrollView>
 
-      {/* Edit Modal */}
-      <Modal
-        animationType="fade"
-        transparent={true}
+      <SettingsEditModal
         visible={modalVisible}
-        onRequestClose={closeEditModal}
-      >
-        <TouchableWithoutFeedback onPress={() => Keyboard.dismiss()}>
-          <KeyboardAvoidingView 
-            behavior={Platform.OS === "ios" ? "padding" : "height"}
-            style={styles.modalOverlay}
-            keyboardVerticalOffset={Platform.OS === "ios" ? 0 : 20}
-          >
-            <View style={styles.modalContent}>
-              <Text style={styles.modalTitle}>
-                 {editingField === 'gender' ? 'Select Gender' : `Update ${editingField}`}
-              </Text>
-              
-              {/* --- 1. GENDER UI --- */}
-              {editingField === 'gender' ? (
-                <View style={{ gap: 10, marginBottom: 20 }}>
-                  {['Male', 'Female'].map((option) => (
-                    <TouchableOpacity 
-                    activeOpacity={0.7}
-                      key={option}
-                      style={[
-                        styles.modalInput, 
-                        { 
-                          backgroundColor: tempValue === option ? '#000' : '#f9f9f9',
-                          justifyContent: 'center', alignItems: 'center', borderColor: '#e0e0e0'
-                        }
-                      ]}
-                      onPress={() => setTempValue(option)}
-                    >
-                      <Text style={{ fontWeight: '600', color: tempValue === option ? '#fff' : '#000' }}>
-                        {option}
-                      </Text>
-                    </TouchableOpacity>
-                  ))}
-                </View>
-              ) : 
-
-              /* --- 2. NUTRITION SLIDER --- */
-              editingField === 'nutrition' ? (
-                <View style={styles.sliderContainer}>
-                  <Text style={styles.sliderValueText}>{Math.round(Number(tempValue))} kcal</Text>
-                  <Slider
-                    style={{width: '100%', height: 40}}
-                    minimumValue={1200} maximumValue={5000} step={50}
-                    value={Number(tempValue) || 0}
-                    onValueChange={(val) => setTempValue(val.toString())}
-                    minimumTrackTintColor="#000" maximumTrackTintColor="#000" thumbTintColor="#000"
-                  />
-                </View>
-              ) : (
-
-              /* --- 3. STANDARD INPUT --- */
-                <View>
-                  <TextInput 
-                    style={styles.modalInput}
-                    value={tempValue}
-                    onChangeText={setTempValue}
-                    keyboardType="numeric"
-                    autoFocus={true}
-                    placeholder="Enter value"
-                    placeholderTextColor="#999"
-                  />
-                   {(editingField === 'currentWeight' || editingField === 'goalWeight') && (
-                    <View style={styles.infoContainer}>
-                      <Ionicons name="information-circle" size={16} color="#666" style={{marginRight: 4}}/>
-                      <Text style={styles.helperText}>
-                        Broad healthy range: {suggestMin}kg - {suggestMax}kg
-                      </Text>
-                    </View>
-                  )}
-                </View>
-              )}
-
-              <View style={styles.modalButtons}>
-                <TouchableOpacity style={[styles.modalButton, styles.cancelButton]} onPress={closeEditModal}>
-                  <Text style={styles.cancelButtonText}>Cancel</Text>
-                </TouchableOpacity>
-                <TouchableOpacity style={[styles.modalButton, styles.saveButton]} onPress={saveEdit}>
-                  <Text style={styles.saveButtonText}>Save</Text>
-                </TouchableOpacity>
-              </View>
-            </View>
-          </KeyboardAvoidingView>
-        </TouchableWithoutFeedback>
-      </Modal>
+        editingField={editingField}
+        tempValue={tempValue}
+        setTempValue={setTempValue}
+        suggestMin={suggestMin}
+        suggestMax={suggestMax}
+        onClose={closeEditModal}
+        onSave={saveEdit}
+      />
 
     </SafeAreaView>
   );
@@ -277,19 +196,4 @@ const styles = StyleSheet.create({
   logoutText: { fontSize: 16, fontWeight: '600', color: '#ff3b30' },
   versionText: { textAlign: 'center', marginTop: 20, color: '#999', fontSize: 12 },
   
-  // Modal styles
-  modalOverlay: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', alignItems: 'center', padding: 20 },
-  modalContent: { backgroundColor: '#fff', width: '100%', maxWidth: 320, borderRadius: 16, padding: 24, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.25, shadowRadius: 3.84, elevation: 5 },
-  modalTitle: { fontSize: 18, fontWeight: '700', marginBottom: 20, textAlign: 'center' },
-  modalInput: { height: 50, borderWidth: 1, borderColor: '#e0e0e0', borderRadius: 8, fontSize: 16, marginBottom: 15, backgroundColor: '#f9f9f9' },
-  infoContainer: { flexDirection: 'row', alignItems: 'flex-start', backgroundColor: '#f0f9ff', padding: 10, borderRadius: 8, marginBottom: 20 },
-  helperText: { fontSize: 13, color: '#444', lineHeight: 18 },
-  modalButtons: { flexDirection: 'row', justifyContent: 'space-between', gap: 12 },
-  modalButton: { flex: 1, height: 44, borderRadius: 8, justifyContent: 'center', alignItems: 'center' },
-  cancelButton: { backgroundColor: '#f0f0f0' },
-  saveButton: { backgroundColor: '#000' },
-  cancelButtonText: { color: '#000', fontWeight: '600' },
-  saveButtonText: { color: '#fff', fontWeight: '600' },
-  sliderContainer: { alignItems: 'center', marginBottom: 25 },
-  sliderValueText: { fontSize: 32, fontWeight: '800', color: '#000', marginBottom: 15 },
 });
