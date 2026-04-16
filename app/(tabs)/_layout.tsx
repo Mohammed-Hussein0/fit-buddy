@@ -44,12 +44,12 @@ export default function TabLayout() {
       />
 
       <Tabs.Screen
-        name="nutrition"
+        name="Advice"
         options={{
-          title: "Nutrition",
+          title: "Advice",
           headerShown: false,
           tabBarIcon: ({ color }) => (
-            <Ionicons size={26} name="restaurant" color={color} />
+            <Ionicons size={26} name="camera" color={color} />
           ),
         }}
       />

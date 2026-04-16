@@ -13,7 +13,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     detectSessionInUrl: false,
   },
 });
-
+export const picApi = "AQ.Ab8RN6IGtXafv1MB-nVDQ3ho1yt9-qguNpFl57JpOmRmqH1urg";
 {/*
 
 // 1. Configure Google Sign-In
@@ -30,6 +30,7 @@ export async function signInWithGoogle() {
     await GoogleSignin.hasPlayServices();
     const userInfo = await GoogleSignin.signIn();
     
+
     if (userInfo.data?.idToken) {
       const { data, error } = await supabase.auth.signInWithIdToken({
         provider: 'google',

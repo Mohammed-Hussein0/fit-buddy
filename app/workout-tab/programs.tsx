@@ -6,78 +6,176 @@ import {
   FlatList, 
   Image, 
   TouchableOpacity, 
+  TextInput,
+  Platform,
+  Keyboard,
+  TouchableWithoutFeedback,
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
-
-
 
 interface Program {
   id: string;
   title: string;
-  status: string;
-  progress: string;
   image: string;
 }
+
 const MY_PROGRAMS: Program[] = [
-  { id: 'p1', title: 'Summer Shred 2026', status: 'Active', progress: '45%', image: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=600' },
-  { id: 'p2', title: 'Winter Bulk', status: 'Completed', progress: '100%', image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600' },
-  { id: 'p3', title: 'Home Bodyweight', status: 'Paused', progress: '12%', image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=600' },
-  { id: 'p4', title: 'Yoga Flexibility', status: 'New', progress: '0%', image: 'https://images.unsplash.com/photo-1544367563-12123d8975b9?w=600' },
+  { id: 'p1', title: 'Summer Shred 2026', image: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=600' },
+  { id: 'p2', title: 'Winter Bulk',  image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600' },
+  { id: 'p3', title: 'Home Bodyweight',  image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=600' },
 ];
 
 interface programScreenProps {
     handleSelectProgram: (item: Program) => void
 }
-export default function ProgramScreen({handleSelectProgram}: programScreenProps)
-{
 
-const renderProgramItem = ({ item }: { item: Program }) => (
-    <TouchableOpacity 
-      style={styles.programCard} 
-      activeOpacity={0.9}
-      onPress={() => handleSelectProgram(item)}
-    >
-      <Image source={{ uri: item.image }} style={styles.programImage} />
-      <View style={styles.programOverlay} />
-      
-      <View style={styles.programInfo}>
-        <View style={styles.statusBadge}>
-          <Text style={styles.statusText}>{item.status}</Text>
-        </View>
-        <Text style={styles.programTitle}>{item.title}</Text>
-        <Text style={styles.programProgress}>{item.progress} Complete</Text>
-      </View>
-      <View style={styles.arrowCircle}>
-        <Ionicons name="arrow-forward" size={20} color="#000" />
-      </View>
-    </TouchableOpacity>
-  );
+export default function ProgramScreen({handleSelectProgram}: programScreenProps) {
+  const [programs, setPrograms] = useState<Program[]>(MY_PROGRAMS);
+  const [currentProgramId, setCurrentProgramId] = useState<string>('p1');
+  const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
+  const [newProgramTitle, setNewProgramTitle] = useState('');
 
-  return(
-    <View style={styles.container}>
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>My Programs</Text>
+  const addCardItem: Program = {
+    id: 'add-program-card',
+    title: 'Add',
+    image: '',
+  };
+
+  const resetCreateForm = () => {
+    setNewProgramTitle('');
+    Keyboard.dismiss();
+  };
+
+  const handleCreateProgram = () => {
+    const trimmedTitle = newProgramTitle.trim();
+    if (!trimmedTitle) return;
+
+    const newProgram: Program = {
+      id: `custom-${Date.now()}`,
+      title: trimmedTitle,
+      image: 'https://images.unsplash.com/photo-1517838277536-f5f99be501cd?w=600',
+    };
+
+    setPrograms((prev) => [...prev, newProgram]);
+    setIsCreateModalVisible(false);
+    resetCreateForm();
+  };
+
+  const renderProgramItem = ({ item }: { item: Program, index:number }) => {
+    const isAddCard = item.id === addCardItem.id;
+    
+    if(isAddCard) return (
+      <TouchableOpacity 
+        style={styles.optionToAdd} 
+        activeOpacity={0.9}
+        onPress={() => setIsCreateModalVisible(true)}
+      >
+        <View style={styles.optionToAddInner}>
+          <View style={styles.optionAddIconWrap}>
+            <Ionicons name="add" size={26} color="#fff" />
           </View>
+          <Text style={styles.optionAddTitle}>Create Program</Text>
+          <Text style={styles.optionAddSubtitle}>Custom training plan</Text>
+        </View>
+      </TouchableOpacity>
+    );
+      
+    const isCurrentProgram = item.id === currentProgramId;
+    return (
+      <TouchableOpacity 
+        style={styles.programCard} 
+        activeOpacity={0.9}
+        onPress={() => {
+          setCurrentProgramId(item.id);
+          handleSelectProgram(item);
+        }}
+      >
+        <Image source={{ uri: item.image }} style={styles.programImage} />
+        <View style={styles.programOverlay} />
+        <View style={styles.programInfo}>
+          <View style={styles.statusBadge}>
+            <Text style={styles.statusText}>{isCurrentProgram ? 'In Use' : 'Not Active'}</Text>
+          </View>
+          <Text style={styles.programTitle}>{item.title}</Text>
+        </View>
+        <View style={styles.arrowCircle}>
+          <Ionicons name="arrow-forward" size={20} color="#000" />
+        </View>
+      </TouchableOpacity>
+    );
+  }
 
-          <FlatList 
-            data={MY_PROGRAMS}
-            keyExtractor={item => item.id}
-            contentContainerStyle={styles.listContent}
-            renderItem={renderProgramItem}
-            showsVerticalScrollIndicator={false}
-            />
+  return (
+    <View style={styles.container}>
+      <View style={styles.header}>
+        <Text style={styles.headerTitle}>My Programs</Text>
+      </View>
+
+      <FlatList 
+        data={[...programs, addCardItem]}
+        keyExtractor={item => item.id}
+        contentContainerStyle={styles.listContent}
+        renderItem={renderProgramItem}
+        showsVerticalScrollIndicator={false}
+      />
+
+      {/* REPLACED MODAL WITH ABSOLUTE VIEW */}
+      {isCreateModalVisible && (
+        <View style={StyleSheet.absoluteFill}>
+          <TouchableWithoutFeedback onPress={() => {
+            setIsCreateModalVisible(false);
+            resetCreateForm();
+          }}>
+            <View style={styles.modalBackdrop}>
+              <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
+                <View style={styles.modalCard}>
+                  <Text style={styles.modalTitle}>New Program</Text>
+                  <Text style={styles.modalSubtitle}>Add your own training program</Text>
+
+                  <TextInput
+                    autoFocus={true}
+                    value={newProgramTitle}
+                    onChangeText={setNewProgramTitle}
+                    placeholder="Program name"
+                    placeholderTextColor="#8b8b8b"
+                    style={styles.input}
+                    // On Android, autoFocus in a regular View is much more reliable
+                  />
+
+                  <View style={styles.modalActions}>
+                    <TouchableOpacity
+                      style={[styles.actionButton, styles.cancelButton]}
+                      onPress={() => {
+                        setIsCreateModalVisible(false);
+                        resetCreateForm();
+                      }}
+                    >
+                      <Text style={styles.cancelButtonText}>Cancel</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity
+                      style={[styles.actionButton, styles.createButton]}
+                      onPress={handleCreateProgram}
+                    >
+                      <Text style={styles.createButtonText}>Add Program</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              </TouchableWithoutFeedback>
             </View>
+          </TouchableWithoutFeedback>
+        </View>
+      )}
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', paddingTop: 60 },
   listContent: { paddingHorizontal: 20, paddingBottom: 120 },
-  
-  // Programs List
   header: { paddingHorizontal: 20, marginBottom: 10 },
   headerTitle: { fontSize: 28, fontWeight: '800', color: '#000', letterSpacing: -1 },
-  
+
+  // Program Card Styles
   programCard: { 
     height: 180, 
     marginBottom: 20, 
@@ -85,33 +183,28 @@ const styles = StyleSheet.create({
     overflow: 'hidden', 
     backgroundColor: '#000', 
     justifyContent: 'flex-end',
-    // Shadow for iOS
+    elevation: 5,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
     shadowOpacity: 0.15,
     shadowRadius: 20,
-    // Elevation for Android
-    elevation: 5,
   },
   programImage: { ...StyleSheet.absoluteFillObject, opacity: 0.9 },
   programOverlay: { 
     ...StyleSheet.absoluteFillObject, 
-    backgroundColor: 'linear-gradient(180deg, rgba(0,0,0,0) 0%, rgba(0,0,0,0.6) 100%)' // Note: React Native doesn't support linear-gradient string natively without expo-linear-gradient, using a solid fallback or library is needed. 
-    // For standard RN view without extra libs, we usually just use a transparent black:
+    backgroundColor: 'rgba(0,0,0,0.3)' 
   },
   programInfo: { padding: 25, flex: 1, justifyContent: 'flex-end' },
   statusBadge: { 
-    backgroundColor: 'rgba(255,255,255,0.25)', 
+    backgroundColor: 'rgba(0, 0, 0, 0.34)', 
     paddingHorizontal: 10, 
     paddingVertical: 6, 
     borderRadius: 8, 
     alignSelf: 'flex-start', 
-    marginBottom: 10,
-    backdropFilter: 'blur(10px)' // Works on some versions, ignored on others
+    marginBottom: 10 
   },
-  statusText: { color: '#fff', fontSize: 10, fontWeight: '800', textTransform: 'uppercase', letterSpacing: 0.5 },
+  statusText: { color: '#fff', fontSize: 11, fontWeight: '900', textTransform: 'uppercase' },
   programTitle: { color: '#fff', fontSize: 24, fontWeight: '800', marginBottom: 6 },
-  programProgress: { color: 'rgba(255,255,255,0.8)', fontSize: 14, fontWeight: '600' },
   arrowCircle: { 
     position: 'absolute', 
     top: 20, 
@@ -123,4 +216,62 @@ const styles = StyleSheet.create({
     justifyContent: 'center', 
     alignItems: 'center' 
   },
+
+  // Add Card Styles
+  optionToAdd:{
+    height: 130,
+    marginBottom: 20,
+    borderRadius: 24,
+    backgroundColor: 'rgba(16,16,16,0.8)',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.14)',
+    justifyContent: 'center',
+  },
+  optionToAddInner: {justifyContent:'center', alignItems:'center'},
+  optionAddIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: 'rgba(255,255,255,0.2)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  optionAddTitle: { color: '#fff', fontSize: 17, fontWeight: '700' },
+  optionAddSubtitle: { color: 'rgba(255,255,255,0.72)', fontSize: 13 },
+
+  // Fake Modal (Absolute View) Styles
+  modalBackdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: 'rgba(0,0,0,0.7)',
+    justifyContent: 'flex-start',
+    paddingTop: 140, // Adjust based on where you want the card to appear
+    paddingHorizontal: 20,
+    zIndex: 999, // Ensure it sits on top of the list
+  },
+  modalCard: {
+    borderRadius: 18,
+    padding: 18,
+    backgroundColor: '#161616',
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.12)',
+  },
+  modalTitle: { color: '#fff', fontSize: 22, fontWeight: '800', marginBottom: 4 },
+  modalSubtitle: { color: 'rgba(255,255,255,0.7)', fontSize: 13, marginBottom: 14 },
+  input: {
+    height: 46,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(255,255,255,0.18)',
+    paddingHorizontal: 12,
+    color: '#fff',
+    backgroundColor: 'rgba(255,255,255,0.04)',
+    marginBottom: 10,
+  },
+  modalActions: { flexDirection: 'row', gap: 10, marginTop: 8 },
+  actionButton: { flex: 1, borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
+  cancelButton: { backgroundColor: 'rgba(255,255,255,0.08)' },
+  createButton: { backgroundColor: '#fff' },
+  cancelButtonText: { color: '#fff', fontWeight: '700' },
+  createButtonText: { color: '#111', fontWeight: '800' },
 });
