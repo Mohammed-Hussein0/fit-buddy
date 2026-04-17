@@ -59,37 +59,74 @@ const uriToGenerativePart = async (uri: string) => {
     return { inlineData: { data: base64Data, mimeType: "image/jpeg" } };
   }
 };
-  const runAnalysis = async () => {
-    if (!images.front || !images.back) return;
+ const runAnalysis = async () => {
+  if (!images.front || !images.back) return;
 
-    setLoading(true);
-    try {
-      const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
-      
-      const prompt = `Act as a blunt, professional fitness coach. I am providing a front and back photo of my upper body. 
-      1. Identify which muscle group is visually lagging the most (e.g., side delts, upper chest, rear delts).
-      2. Give 1-2 specific exercise recommendations to fix this.
-      3. Be direct and honest. No fluff. Keep the response under 100 words.`;
+  setLoading(true);
+  try {
+    // 1. Prepare your data
+    const frontPart = await uriToGenerativePart(images.front);
+    const backPart = await uriToGenerativePart(images.back);
 
-      const imageParts = await Promise.all([
-        uriToGenerativePart(images.front),
-        uriToGenerativePart(images.back),
-      ]);
+    const promptText =`
+    You are a professional physique competition judge and coach. 
+    Analyze the provided front and back photos, legs do not matter now.
 
-      const result = await model.generateContent([prompt, ...imageParts]);
-      const response = await result.response;
-      setAiResponse(response.text());
-      
-      // OPTIONAL: Clear photos immediately after getting text to ensure privacy
-      // setImages({ front: null, back: null }); 
+    CRITICAL RULE: If the photos are blurry, too dark, do not show a human upper body, 
+    or are otherwise unusable for a physique review, start your response ONLY with 
+    the word "REJECTED" followed by the reason why, but if the subject is wearing tight clothes start with a warning about how it is hard to judge with clothes but try and give an assessment 
+    if the clothes are to baggy then reject.
 
-    } catch (error) {
-      console.error(error);
-      Alert.alert("Error", "AI analysis failed. Check your API key or connection.");
-    } finally {
-      setLoading(false);
+    also take note that a lot of photos will be of people posing so make sure you do not get tricked by it
+    If valid, provide the review in this format:
+    
+    OVERALL REVIEW:
+    [2-3 sentences summarizing the user's current physique, try mentioning 1-2 strong points like "broad clavicles" or "good lat width" only if they actually exist do not lie.]
+
+    LAGGING GROUPS:
+    - [Muscle Group]: [Blunt reason why it's lagging].
+    
+    ACTION PLAN:
+    - [Exercise 1]: [Specific cue for improvement].
+    - [Exercise 2]: [Specific cue for improvement].
+
+    Tone: Professional, blunt, and encouraging. No fluff.
+  `;
+
+    // 2. Use manual fetch (Bypasses the library's AIza check)
+    const response = await fetch(
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${picApi}`,
+      {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          contents: [{
+            parts: [
+              { text: promptText },
+              frontPart, // This is the {inlineData: {...}} from your helper
+              backPart
+            ]
+          }]
+        })
+      }
+    );
+
+  const data = await response.json();
+    const text = data.candidates[0].content.parts[0].text;
+
+    if (text.startsWith("REJECTED")) {
+      setAiResponse(null);
+      Alert.alert("Invalid Photos", text.replace("REJECTED", "").trim());
+    } else {
+      setAiResponse(text);
     }
-  };
+  } catch (error) {
+    console.error("Fetch Error:", error);
+    Alert.alert("Error", "Network request failed.");
+  } finally {
+    setLoading(false);
+  }
+};
 
   // ... (Your handlePickImage and handleRemoveImage functions remain the same)
   const handlePickImage = async (useCamera: boolean) => {
@@ -271,7 +308,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
     marginTop: 10,
-    marginBottom: 40
+    marginBottom: 80
   },
   disabledButton: { backgroundColor: '#ccc' },
   analyzeButtonText: { color: '#fff', fontSize: 16, fontWeight: '800' },

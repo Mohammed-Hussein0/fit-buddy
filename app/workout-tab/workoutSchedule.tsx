@@ -1,303 +1,427 @@
-import React, { useRef, useEffect } from 'react';
+import Ionicons from "@expo/vector-icons/Ionicons";
+import React, { useState } from "react";
 import {
-  View,
-  Text,
-  StyleSheet,
+  Alert,
   FlatList,
-  Image,
+  Keyboard,
+  Platform,
+  Pressable,
+  StyleSheet,
+  Text,
+  TextInput,
   TouchableOpacity,
-} from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
+  View,
+} from "react-native";
+import {
+  GestureHandlerRootView,
+  Swipeable,
+} from "react-native-gesture-handler";
+import Animated, {
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from "react-native-reanimated";
 
-// --- Types ---
+// --- TYPES & DATA ---
 interface Workout {
   id: string;
   title: string;
   duration: string;
-  image: string;
-  date: Date;
+  dayOfWeek: number;
+  note: string;
 }
 
-interface Program {
-  id: string;
-  title: string;
-  status: string;
-  progress: string;
-  image: string;
-}
-
-interface DailyScheduleProps {
-  activeProgram: Program;
-  handleBackToPrograms: () => void;
-}
-
-// --- Constants & Data ---
-const ITEM_HEIGHT = 80; // Height of a normal row
-const ACTIVE_ITEM_HEIGHT = 340; // Height of the "Today" expanded card area
-
-const d = (offset: number) => {
-  const date = new Date();
-  date.setDate(date.getDate() + offset);
-  return date;
-};
-
-const WORKOUT_SCHEDULE: Workout[] = [
-  { id: '1', title: 'Chest Foundation', duration: '45 min', date: d(-2), image: 'https://images.unsplash.com/photo-1571019614242-c5c5dee9f50b?w=200' },
-  { id: '2', title: 'Back & Biceps', duration: '50 min', date: d(-1), image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=200' },
-  { id: '3', title: 'LEG DAY DESTRUCTION', duration: '60 min', date: d(0), image: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=600' },
-  { id: '4', title: 'Shoulder Press', duration: '40 min', date: d(1), image: 'https://images.unsplash.com/photo-1544367563-12123d8975b9?w=200' },
-  { id: '5', title: 'Active Recovery', duration: '30 min', date: d(2), image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=200' },
-  { id: '6', title: 'Upper Power', duration: '55 min', date: d(3), image: 'https://images.unsplash.com/photo-1601422407692-ec4eeec1d9b3?w=200' },
-  { id: '7', title: 'Lower Hypertrophy', duration: '50 min', date: d(4), image: 'https://images.unsplash.com/photo-1599058945522-28d584b6f0ff?w=200' },
-  { id: '8', title: 'Abs & Cardio', duration: '25 min', date: d(5), image: 'https://images.unsplash.com/photo-1574680096141-1cddd70fb668?w=200' },
-  { id: '9', title: 'Full Body A', duration: '60 min', date: d(6), image: 'https://images.unsplash.com/photo-1541534741688-6078c6bfb5c5?w=200' },
-  { id: '10', title: 'Full Body B', duration: '60 min', date: d(7), image: 'https://images.unsplash.com/photo-1518611012118-696072aa579a?w=200' },
+const DAYS = [
+  "SUNDAY",
+  "MONDAY",
+  "TUESDAY",
+  "WEDNESDAY",
+  "THURSDAY",
+  "FRIDAY",
+  "SATURDAY",
 ];
+const NOTE_LIMIT = 35;
 
-export default function DailySchedule({ activeProgram, handleBackToPrograms }: DailyScheduleProps) {
-  const flatListRef = useRef<FlatList>(null);
-  
-  // 1. Define today BEFORE using it
-  const today = new Date();
-  
-  // 2. Data source
-  const data = WORKOUT_SCHEDULE;
+export default function WeeklySchedule({
+  activeProgram,
+  handleBackToPrograms,
+}: any) {
+  // Starts empty as requested
+  const [workouts, setWorkouts] = useState<Workout[]>([]);
 
-  // 3. Find index
-  const todayIndex = data.findIndex(
-    (item) =>
-      item.date.getDate() === today.getDate() &&
-      item.date.getMonth() === today.getMonth()
+  const [isAddMode, setIsAddMode] = useState(false);
+  const [newTitle, setNewTitle] = useState("");
+  const [newNote, setNewNote] = useState("");
+  const [selectedDay, setSelectedDay] = useState(new Date().getDay());
+
+  const formOpacity = useSharedValue(0);
+  const todayNum = new Date().getDay();
+
+  // --- LOGIC ---
+  const toggleAddMode = () => {
+    if (isAddMode) {
+      Keyboard.dismiss();
+      formOpacity.value = withTiming(0, { duration: 300 });
+      setTimeout(() => setIsAddMode(false), 200);
+    } else {
+      setIsAddMode(true);
+      formOpacity.value = withTiming(1, { duration: 300 });
+    }
+  };
+
+  const handleAddWorkout = () => {
+    if (!newTitle.trim()) return;
+    if (workouts.some((w) => w.dayOfWeek === selectedDay)) {
+      Alert.alert(
+        "Day Occupied",
+        "You already have a workout scheduled for this day.",
+      );
+      return;
+    }
+
+    const newWorkout: Workout = {
+      id: Math.random().toString(),
+      title: newTitle.trim(),
+      duration: "45 min",
+      dayOfWeek: selectedDay,
+      note: newNote.trim() || "General Session",
+    };
+
+    setWorkouts((prev) =>
+      [...prev, newWorkout].sort((a, b) => a.dayOfWeek - b.dayOfWeek),
+    );
+
+    Keyboard.dismiss();
+    formOpacity.value = withTiming(0, { duration: 200 });
+    setTimeout(() => {
+      setIsAddMode(false);
+      setNewTitle("");
+      setNewNote("");
+    }, 200);
+  };
+
+  const confirmDelete = (id: string) => {
+    Alert.alert("Delete Workout", "Are you sure you want to remove this day?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Delete",
+        style: "destructive",
+        onPress: () => {
+          setWorkouts((prev) => prev.filter((w) => w.id !== id));
+        },
+      },
+    ]);
+  };
+
+  const renderRightActions = (id: string) => (
+    <TouchableOpacity
+      style={styles.deleteAction}
+      onPress={() => confirmDelete(id)}
+    >
+      <Ionicons name="trash-outline" size={24} color="#fff" />
+    </TouchableOpacity>
   );
 
+  const animatedFormStyle = useAnimatedStyle(() => ({
+    opacity: formOpacity.value,
+    transform: [{ translateY: withTiming(isAddMode ? 0 : -25) }],
+  }));
+
   return (
-    <View style={styles.container}>
-      {/* Top Bar */}
-      <View style={styles.topBar}>
-        <TouchableOpacity style={styles.circleBtn} onPress={handleBackToPrograms}>
-          <Ionicons name="grid-outline" size={20} color="#000" />
-        </TouchableOpacity>
-        <Text style={styles.programName}>
-          {activeProgram ? activeProgram.title.toUpperCase() : 'PROGRAM'}
-        </Text>
-        <TouchableOpacity style={styles.circleBtn}>
-          <Ionicons name="ellipsis-horizontal" size={20} color="#000" />
-        </TouchableOpacity>
-      </View>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <Pressable style={styles.container} onPress={Keyboard.dismiss}>
+        {/* TOP BAR */}
+        <View style={styles.topBar}>
+          <TouchableOpacity
+            style={styles.circleBtn}
+            onPress={handleBackToPrograms}
+          >
+            <Ionicons name="chevron-back" size={20} color="#000" />
+          </TouchableOpacity>
+          <Text style={styles.programName}>WEEKLY SPLIT</Text>
+          <TouchableOpacity
+            style={[styles.circleBtn, isAddMode && styles.activeBtn]}
+            onPress={toggleAddMode}
+          >
+            <Ionicons
+              name={isAddMode ? "close" : "add"}
+              size={24}
+              color={isAddMode ? "#fff" : "#000"}
+            />
+          </TouchableOpacity>
+        </View>
 
-      <FlatList
-        ref={flatListRef}
-        data={data}
-        keyExtractor={(item) => item.id}
-        // Scroll to specific item logic
-        initialScrollIndex={todayIndex !== -1 ? todayIndex : 0}
-        onScrollToIndexFailed={(info) => {
-          const wait = new Promise((resolve) => setTimeout(resolve, 500));
-          wait.then(() => {
-            flatListRef.current?.scrollToIndex({ index: info.index, animated: true });
-          });
-        }}
-        getItemLayout={(data, index) => {
-          let offset = 0;
-          let length = ITEM_HEIGHT;
+        {/* INLINE ADD FORM (IDENTICAL STYLING TO YOURS) */}
+        {isAddMode && (
+          <Animated.View style={[styles.inlineAddCard, animatedFormStyle]}>
+            <Text style={styles.label}>WORKOUT NAME</Text>
+            <TextInput
+              style={styles.input}
+              placeholder="e.g. Back & Biceps"
+              value={newTitle}
+              onChangeText={setNewTitle}
+              autoFocus
+              maxLength={25}
+            />
 
-          if (todayIndex !== -1) {
-            if (index < todayIndex) {
-              // Items before today are all small
-              offset = index * ITEM_HEIGHT;
-            } else if (index === todayIndex) {
-              // The today item itself
-              offset = index * ITEM_HEIGHT;
-              length = ACTIVE_ITEM_HEIGHT;
-            } else {
-              // Items after today: (Number of previous small items * small height) + (1 big item height)
-              // Simplified: (Index * 80) + (Difference between Big and Small)
-              offset = (index * ITEM_HEIGHT) + (ACTIVE_ITEM_HEIGHT - ITEM_HEIGHT);
-            }
-          } else {
-            offset = index * ITEM_HEIGHT;
-          }
-
-          return { length, offset, index };
-        }}
-        renderItem={({ item, index }) => {
-          const isToday = index === todayIndex; // Use index check for speed
-          const dateStr = item.date.toLocaleDateString('en-US', {
-            weekday: 'short',
-            month: 'short',
-            day: 'numeric',
-          }).toUpperCase();
-
-          if (isToday) {
-            return (
-              <View style={[styles.todayContainer, { height: ACTIVE_ITEM_HEIGHT }]}>
-                <Text style={styles.sectionHeader}>TODAYS FOCUS</Text>
-                <TouchableOpacity style={styles.bigCard} activeOpacity={0.95}>
-                  <Image source={{ uri: item.image }} style={styles.bigImage} />
-                  <View style={styles.overlay} />
-                  <View style={styles.bigTextContent}>
-                    <View style={styles.tag}>
-                      <Text style={styles.tagText}>CURRENT</Text>
-                    </View>
-                    <Text style={styles.bigTitle}>{item.title}</Text>
-                    <Text style={styles.bigSubtitle}>{item.duration} • Heavy</Text>
-                  </View>
-                </TouchableOpacity>
-              </View>
-            );
-          }
-
-          return (
-            <View style={[styles.rowWrapper, { height: ITEM_HEIGHT }]}>
-              {/* Timeline Line */}
-              <View style={styles.timelineLine} />
-              
-              <TouchableOpacity style={styles.row}>
-                <Image source={{ uri: item.image }} style={styles.smallImage} />
-                <View style={styles.rowContent}>
-                  <Text style={styles.dateLabel}>{dateStr}</Text>
-                  <Text style={styles.rowTitle}>{item.title}</Text>
-                </View>
-                <Ionicons name="chevron-forward" size={16} color="#ccc" />
-              </TouchableOpacity>
+            <View style={styles.noteHeader}>
+              <Text style={styles.label}>SESSION NOTE / FOCUS</Text>
+              <Text
+                style={[
+                  styles.charLimit,
+                  newNote.length >= NOTE_LIMIT && { color: "#ff4444" },
+                ]}
+              >
+                {newNote.length}/{NOTE_LIMIT}
+              </Text>
             </View>
-          );
-        }}
-        contentContainerStyle={styles.listContent}
-        showsVerticalScrollIndicator={false}
-      />
-    </View>
+            <TextInput
+              style={styles.noteInput}
+              placeholder="e.g. Focus on form, 12 reps"
+              value={newNote}
+              onChangeText={setNewNote}
+              maxLength={NOTE_LIMIT}
+              placeholderTextColor="#ccc"
+            />
+
+            <Text style={styles.label}>ASSIGN TO DAY</Text>
+            <View style={styles.daySelector}>
+              {DAYS.map((day, index) => {
+                const isOccupied = workouts.some((w) => w.dayOfWeek === index);
+                const isSelected = selectedDay === index;
+                return (
+                  <TouchableOpacity
+                    key={day}
+                    disabled={isOccupied}
+                    style={[
+                      styles.dayOption,
+                      isSelected && styles.dayOptionSelected,
+                      isOccupied && styles.dayOptionDisabled,
+                    ]}
+                    onPress={() => setSelectedDay(index)}
+                  >
+                    <Text
+                      style={[
+                        styles.dayOptionText,
+                        isSelected && styles.dayOptionTextSelected,
+                        isOccupied && styles.dayOptionTextDisabled,
+                      ]}
+                    >
+                      {day.substring(0, 1)}
+                    </Text>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            <TouchableOpacity style={styles.saveBtn} onPress={handleAddWorkout}>
+              <Text style={styles.saveText}>CONFIRM DAY</Text>
+            </TouchableOpacity>
+          </Animated.View>
+        )}
+
+        {/* LIST WITH SWIPE-TO-DELETE */}
+        <FlatList
+          data={workouts}
+          keyExtractor={(item) => item.id}
+          removeClippedSubviews={Platform.OS === "android"}
+          renderItem={({ item }) => {
+            const isToday = item.dayOfWeek === todayNum;
+            return (
+              <Swipeable renderRightActions={() => renderRightActions(item.id)}>
+                <TouchableOpacity
+                  style={[styles.row, isToday && styles.todayRow]}
+                  onPress={() =>
+                    Alert.alert("Workout", "Opening " + item.title)
+                  }
+                  activeOpacity={0.7}
+                >
+                  <View style={[styles.dayBadge, isToday && styles.todayBadge]}>
+                    <Text
+                      style={[styles.dayText, isToday && styles.todayDayText]}
+                    >
+                      {DAYS[item.dayOfWeek].substring(0, 3)}
+                    </Text>
+                  </View>
+                  <View style={styles.rowContent}>
+                    <Text style={styles.rowTitle}>{item.title}</Text>
+                    <Text style={styles.rowSubtitle} numberOfLines={1}>
+                      {item.note}
+                    </Text>
+                  </View>
+                  <Ionicons
+                    name="chevron-forward"
+                    size={18}
+                    color={isToday ? "#000" : "#EEE"}
+                  />
+                </TouchableOpacity>
+              </Swipeable>
+            );
+          }}
+          contentContainerStyle={styles.listContent}
+          ListEmptyComponent={
+            !isAddMode ? (
+              <View style={styles.emptyContainer}>
+                <Ionicons name="calendar-outline" size={48} color="#eee" />
+                <Text style={styles.emptyText}>
+                  It's pretty empty in here...
+                </Text>
+                <Text style={styles.emptySub}>
+                  Add a workout to start your week.
+                </Text>
+              </View>
+            ) : null
+          }
+        />
+      </Pressable>
+    </GestureHandlerRootView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { 
-    flex: 1, 
-    backgroundColor: '#fff', 
-    paddingTop: 60 
+  container: {
+    flex: 1,
+    backgroundColor: "#fff",
+    paddingTop: Platform.OS === "ios" ? 60 : 40,
   },
-  listContent: { 
-    paddingHorizontal: 20, 
-    paddingBottom: 100 
+  topBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingHorizontal: 20,
+    marginBottom: 20,
   },
-  topBar: { 
-    flexDirection: 'row', 
-    justifyContent: 'space-between', 
-    alignItems: 'center', 
-    paddingHorizontal: 20, 
-    paddingBottom: 20 
+  programName: { fontSize: 12, fontWeight: "900", letterSpacing: 2 },
+  circleBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: "#f9f9f9",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  programName: { 
-    fontSize: 14, 
-    fontWeight: '800', 
-    letterSpacing: 1 
+  activeBtn: { backgroundColor: "#000" },
+
+  // Your Specific Form Styling
+  inlineAddCard: {
+    backgroundColor: "#fff",
+    marginHorizontal: 20,
+    padding: 24,
+    borderRadius: 30,
+    borderWidth: 1.5,
+    borderColor: "#000",
+    marginBottom: 25,
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 10 },
+    shadowOpacity: 0.1,
+    shadowRadius: 15,
+    elevation: 5,
   },
-  circleBtn: { 
-    width: 40, 
-    height: 40, 
-    borderRadius: 20, 
-    backgroundColor: '#f4f4f4', 
-    justifyContent: 'center', 
-    alignItems: 'center' 
+  label: {
+    fontSize: 10,
+    fontWeight: "900",
+    color: "#bbb",
+    letterSpacing: 1.5,
+    marginBottom: 8,
   },
-  
-  // Normal Row Styles
-  rowWrapper: { 
-    position: 'relative', 
-    justifyContent: 'center',
-    // Height is handled inline or via constant
-  },
-  timelineLine: { 
-    position: 'absolute', 
-    left: 25, // Center of the 50px image (25px)
-    top: -40, // Reach up to previous item
-    bottom: -40, // Reach down to next item
-    width: 2, 
-    backgroundColor: '#f0f0f0', 
-    zIndex: -1 
-  },
-  row: { 
-    flexDirection: 'row', 
-    alignItems: 'center', 
-    backgroundColor: '#fff', 
-    paddingVertical: 10 
-  },
-  smallImage: { 
-    width: 50, 
-    height: 50, 
-    borderRadius: 10, 
-    backgroundColor: '#eee' 
-  },
-  rowContent: { 
-    flex: 1, 
-    marginLeft: 15 
-  },
-  dateLabel: { 
-    fontSize: 10, 
-    fontWeight: '700', 
-    color: '#999', 
-    marginBottom: 2 
-  },
-  rowTitle: { 
-    fontSize: 16, 
-    fontWeight: '600', 
-    color: '#333' 
+  input: {
+    fontSize: 22,
+    fontWeight: "800",
+    color: "#000",
+    marginBottom: 20,
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
+    paddingBottom: 5,
   },
 
-  // Today / Big Card Styles
-  todayContainer: { 
-    justifyContent: 'center',
-    marginVertical: 10,
-    // Height is handled inline
+  noteHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
   },
-  sectionHeader: { 
-    fontSize: 12, 
-    paddingLeft:30,
-    fontWeight: 'bold', 
-    color: '#888', 
-    marginBottom: 10, 
-    letterSpacing: 1 
+  charLimit: { fontSize: 10, fontWeight: "700", color: "#ccc" },
+  noteInput: {
+    fontSize: 15,
+    fontWeight: "500",
+    color: "#666",
+    backgroundColor: "#f8f8f8",
+    padding: 12,
+    borderRadius: 12,
+    marginBottom: 20,
   },
-  bigCard: { 
-    flex: 1,
-    borderRadius: 24, 
-    overflow: 'hidden', 
-    backgroundColor: '#000', 
-    justifyContent: 'flex-end',
-    marginBottom: 10
+
+  daySelector: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    marginBottom: 25,
   },
-  bigImage: { 
-    ...StyleSheet.absoluteFillObject 
+  dayOption: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: "#f4f4f4",
+    justifyContent: "center",
+    alignItems: "center",
   },
-  overlay: { 
-    ...StyleSheet.absoluteFillObject, 
-    backgroundColor: 'rgba(0,0,0,0.3)' 
+  dayOptionSelected: { backgroundColor: "#000" },
+  dayOptionDisabled: { opacity: 0.1 },
+  dayOptionText: { fontWeight: "800", color: "#999", fontSize: 13 },
+  dayOptionTextSelected: { color: "#fff" },
+  dayOptionTextDisabled: { textDecorationLine: "line-through" },
+
+  saveBtn: {
+    backgroundColor: "#000",
+    padding: 18,
+    borderRadius: 18,
+    alignItems: "center",
   },
-  bigTextContent: { 
-    padding: 25 
+  saveText: {
+    color: "#fff",
+    fontWeight: "900",
+    fontSize: 13,
+    letterSpacing: 1,
   },
-  tag: { 
-    backgroundColor: '#fff', 
-    paddingHorizontal: 10, 
-    paddingVertical: 5, 
-    borderRadius: 6, 
-    alignSelf: 'flex-start', 
-    marginBottom: 10 
+
+  // List Styling
+  listContent: { paddingHorizontal: 20, paddingBottom: 40 },
+  row: {
+    flexDirection: "row",
+    alignItems: "center",
+    backgroundColor: "#fff",
+    padding: 18,
+    borderRadius: 24,
+    marginBottom: 14,
+    borderWidth: 1,
+    borderColor: "#f2f2f2",
   },
-  tagText: { 
-    fontSize: 10, 
-    fontWeight: '900', 
-    color: '#000' 
+  todayRow: { borderColor: "#000", borderWidth: 1.5 },
+  dayBadge: {
+    width: 48,
+    height: 48,
+    borderRadius: 14,
+    backgroundColor: "#f8f8f8",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 15,
   },
-  bigTitle: { 
-    color: '#fff', 
-    fontSize: 28, 
-    fontWeight: '800', 
-    marginBottom: 5 
+  todayBadge: { backgroundColor: "#000" },
+  dayText: { fontSize: 11, fontWeight: "900", color: "#aaa" },
+  todayDayText: { color: "#fff" },
+  rowContent: { flex: 1 },
+  rowTitle: { fontSize: 17, fontWeight: "800", color: "#111" },
+  rowSubtitle: { fontSize: 13, color: "#aaa", marginTop: 3, fontWeight: "500" },
+
+  // Delete & Empty State
+  deleteAction: {
+    backgroundColor: "#ff4444",
+    justifyContent: "center",
+    alignItems: "center",
+    width: 70,
+    borderRadius: 24,
+    marginBottom: 14,
+    marginLeft: 10,
   },
-  bigSubtitle: { 
-    color: '#ddd', 
-    fontSize: 14, 
-    fontWeight: '500' 
-  },
+  emptyContainer: { alignItems: "center", marginTop: 100 },
+  emptyText: { fontSize: 18, fontWeight: "800", color: "#ccc", marginTop: 15 },
+  emptySub: { fontSize: 14, color: "#ddd", marginTop: 5, fontWeight: "600" },
 });
