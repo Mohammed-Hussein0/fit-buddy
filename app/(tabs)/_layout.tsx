@@ -13,11 +13,11 @@ export default function TabLayout() {
         tabBarInactiveTintColor: "#746c6c",
         // 1. STYLE THE TAB BAR HERE
         tabBarStyle: {
-          backgroundColor: '#ffffff', // Dark background (matches your white/red icons)
-          borderTopWidth: 0,          // Remove the flat line at the top
+          backgroundColor: "#ffffff", // Dark background (matches your white/red icons)
+          borderTopWidth: 0, // Remove the flat line at the top
           height: 75,
-          paddingTop:10,                 // A bit taller to accommodate the curves
-          paddingBottom: 10, 
+          paddingTop: 10, // A bit taller to accommodate the curves
+          paddingBottom: 10,
         },
       }}
     >
@@ -53,7 +53,7 @@ export default function TabLayout() {
           ),
         }}
       />
-    {/*  <Tabs.Screen
+      {/*  <Tabs.Screen
         name="settings"
         options={{
           title: "Settings",

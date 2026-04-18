@@ -9,7 +9,6 @@ import {
 import DailySchedule from '../workout-tab/workoutSchedule';
 import ProgramScreen from '../workout-tab/programs';
 
-// Enable layout animation for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
@@ -17,15 +16,24 @@ if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental
 interface Program {
   id: string;
   title: string;
-  status: string;
-  progress: string;
   image: string;
 }
+
+// Global Workout interface (Matching what we built)
+export interface Workout {
+  id: string;
+  title: string;
+  dayOfWeek: number;
+  note: string;
+  programId: string; // The "Link" to the Program
+}
+
 export default function WorkoutScreen() {
-  // I changed default to null so you can see the Program List first
   const [activeProgram, setActiveProgram] = useState<Program | null>(null); 
 
-  // Navigation Logic
+  // GLOBAL STATE: This holds all workouts for ALL your routines
+  const [allWorkouts, setAllWorkouts] = useState<Workout[]>([]);
+
   const handleBackToPrograms = () => {
     LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
     setActiveProgram(null);
@@ -36,16 +44,28 @@ export default function WorkoutScreen() {
     setActiveProgram(program);
   };
 
+  // --- Shared Logic ---
+  const addWorkoutToGlobal = (newWorkout: any) => {
+    if (!activeProgram) return;
+    const workoutWithId = { ...newWorkout, programId: activeProgram.id };
+    setAllWorkouts(prev => [...prev, workoutWithId]);
+  };
 
+  const deleteWorkoutFromGlobal = (id: string) => {
+    setAllWorkouts(prev => prev.filter(w => w.id !== id));
+  };
 
   return (
     <View style={{ flex: 1, backgroundColor: '#fff' }}>
       <StatusBar barStyle="dark-content" />
       
       {activeProgram ? (
-        // CORRECTED: Render as a JSX Component, not a function call
         <DailySchedule 
           activeProgram={activeProgram} 
+          // FILTER: Only pass workouts belonging to this specific program
+          workouts={allWorkouts.filter(w => w.programId === activeProgram.id)}
+          onAddWorkout={addWorkoutToGlobal}
+          onDeleteWorkout={deleteWorkoutFromGlobal}
           handleBackToPrograms={handleBackToPrograms} 
         />
       ) : (

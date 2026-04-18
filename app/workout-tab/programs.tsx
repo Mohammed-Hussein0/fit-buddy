@@ -7,16 +7,22 @@ import {
   Image, 
   TouchableOpacity, 
   TextInput,
-  Platform,
   Keyboard,
   TouchableWithoutFeedback,
 } from 'react-native';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
+// --- Types ---
 interface Program {
   id: string;
   title: string;
   image: string;
+}
+
+interface programScreenProps {
+    handleSelectProgram: (item: Program) => void;
+    currentProgramId?: string; // Allow parent to tell us which is active
 }
 
 const MY_PROGRAMS: Program[] = [
@@ -25,26 +31,13 @@ const MY_PROGRAMS: Program[] = [
   { id: 'p3', title: 'Home Bodyweight',  image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=600' },
 ];
 
-interface programScreenProps {
-    handleSelectProgram: (item: Program) => void
-}
-
-export default function ProgramScreen({handleSelectProgram}: programScreenProps) {
+export default function ProgramScreen({ handleSelectProgram, currentProgramId: initialId }: programScreenProps) {
   const [programs, setPrograms] = useState<Program[]>(MY_PROGRAMS);
-  const [currentProgramId, setCurrentProgramId] = useState<string>('p1');
+  const [currentProgramId, setCurrentProgramId] = useState<string>(initialId || 'p1');
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [newProgramTitle, setNewProgramTitle] = useState('');
 
-  const addCardItem: Program = {
-    id: 'add-program-card',
-    title: 'Add',
-    image: '',
-  };
-
-  const resetCreateForm = () => {
-    setNewProgramTitle('');
-    Keyboard.dismiss();
-  };
+  const addCardItem: Program = { id: 'add-program-card', title: 'Add', image: '' };
 
   const handleCreateProgram = () => {
     const trimmedTitle = newProgramTitle.trim();
@@ -58,16 +51,17 @@ export default function ProgramScreen({handleSelectProgram}: programScreenProps)
 
     setPrograms((prev) => [...prev, newProgram]);
     setIsCreateModalVisible(false);
-    resetCreateForm();
+    setNewProgramTitle('');
+    Keyboard.dismiss();
   };
 
-  const renderProgramItem = ({ item }: { item: Program, index:number }) => {
+  const renderProgramItem = ({ item }: { item: Program }) => {
     const isAddCard = item.id === addCardItem.id;
     
     if(isAddCard) return (
       <TouchableOpacity 
         style={styles.optionToAdd} 
-        activeOpacity={0.9}
+        activeOpacity={0.8}
         onPress={() => setIsCreateModalVisible(true)}
       >
         <View style={styles.optionToAddInner}>
@@ -81,25 +75,26 @@ export default function ProgramScreen({handleSelectProgram}: programScreenProps)
     );
       
     const isCurrentProgram = item.id === currentProgramId;
+
     return (
       <TouchableOpacity 
-        style={styles.programCard} 
+        style={[styles.programCard, isCurrentProgram && styles.activeCardBorder]} 
         activeOpacity={0.9}
         onPress={() => {
           setCurrentProgramId(item.id);
-          handleSelectProgram(item);
+          handleSelectProgram(item); // Navigates to WeeklySchedule
         }}
       >
         <Image source={{ uri: item.image }} style={styles.programImage} />
         <View style={styles.programOverlay} />
         <View style={styles.programInfo}>
-          <View style={styles.statusBadge}>
-            <Text style={styles.statusText}>{isCurrentProgram ? 'In Use' : 'Not Active'}</Text>
+          <View style={[styles.statusBadge, isCurrentProgram && styles.activeBadge]}>
+            <Text style={styles.statusText}>{isCurrentProgram ? 'Active Now' : 'Tap to Switch'}</Text>
           </View>
           <Text style={styles.programTitle}>{item.title}</Text>
         </View>
         <View style={styles.arrowCircle}>
-          <Ionicons name="arrow-forward" size={20} color="#000" />
+          <Ionicons name={isCurrentProgram ? "checkmark" : "arrow-forward"} size={20} color="#000" />
         </View>
       </TouchableOpacity>
     );
@@ -109,6 +104,7 @@ export default function ProgramScreen({handleSelectProgram}: programScreenProps)
     <View style={styles.container}>
       <View style={styles.header}>
         <Text style={styles.headerTitle}>My Programs</Text>
+        <Text style={styles.headerSubtitle}>Select your current training goal</Text>
       </View>
 
       <FlatList 
@@ -119,51 +115,34 @@ export default function ProgramScreen({handleSelectProgram}: programScreenProps)
         showsVerticalScrollIndicator={false}
       />
 
-      {/* REPLACED MODAL WITH ABSOLUTE VIEW */}
+      {/* CREATE NEW PROGRAM "MODAL" */}
       {isCreateModalVisible && (
-        <View style={StyleSheet.absoluteFill}>
-          <TouchableWithoutFeedback onPress={() => {
-            setIsCreateModalVisible(false);
-            resetCreateForm();
-          }}>
-            <View style={styles.modalBackdrop}>
-              <TouchableWithoutFeedback onPress={(e) => e.stopPropagation()}>
-                <View style={styles.modalCard}>
-                  <Text style={styles.modalTitle}>New Program</Text>
-                  <Text style={styles.modalSubtitle}>Add your own training program</Text>
-
-                  <TextInput
-                    autoFocus={true}
-                    value={newProgramTitle}
-                    onChangeText={setNewProgramTitle}
-                    placeholder="Program name"
-                    placeholderTextColor="#8b8b8b"
-                    style={styles.input}
-                    // On Android, autoFocus in a regular View is much more reliable
-                  />
-
-                  <View style={styles.modalActions}>
-                    <TouchableOpacity
-                      style={[styles.actionButton, styles.cancelButton]}
-                      onPress={() => {
-                        setIsCreateModalVisible(false);
-                        resetCreateForm();
-                      }}
-                    >
-                      <Text style={styles.cancelButtonText}>Cancel</Text>
-                    </TouchableOpacity>
-                    <TouchableOpacity
-                      style={[styles.actionButton, styles.createButton]}
-                      onPress={handleCreateProgram}
-                    >
-                      <Text style={styles.createButtonText}>Add Program</Text>
-                    </TouchableOpacity>
-                  </View>
-                </View>
-              </TouchableWithoutFeedback>
-            </View>
+        <Animated.View entering={FadeIn} exiting={FadeOut} style={styles.modalOverlay}>
+          <TouchableWithoutFeedback onPress={() => setIsCreateModalVisible(false)}>
+            <View style={styles.backdropBlur} />
           </TouchableWithoutFeedback>
-        </View>
+          
+          <View style={styles.modalCard}>
+            <Text style={styles.modalTitle}>New Program</Text>
+            <TextInput
+              autoFocus
+              value={newProgramTitle}
+              onChangeText={setNewProgramTitle}
+              placeholder="e.g. 5x5 Powerlifting"
+              placeholderTextColor="#555"
+              style={styles.input}
+              maxLength={25}
+            />
+            <View style={styles.modalActions}>
+              <TouchableOpacity style={styles.cancelButton} onPress={() => setIsCreateModalVisible(false)}>
+                <Text style={styles.cancelText}>Cancel</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.createButton} onPress={handleCreateProgram}>
+                <Text style={styles.createText}>Create</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </Animated.View>
       )}
     </View>
   );
@@ -171,107 +150,48 @@ export default function ProgramScreen({handleSelectProgram}: programScreenProps)
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#fff', paddingTop: 60 },
-  listContent: { paddingHorizontal: 20, paddingBottom: 120 },
-  header: { paddingHorizontal: 20, marginBottom: 10 },
-  headerTitle: { fontSize: 28, fontWeight: '800', color: '#000', letterSpacing: -1 },
+  header: { paddingHorizontal: 20, marginBottom: 25 },
+  headerTitle: { fontSize: 32, fontWeight: '900', color: '#000', letterSpacing: -1 },
+  headerSubtitle: { fontSize: 14, color: '#888', fontWeight: '500' },
+  listContent: { paddingHorizontal: 20, paddingBottom: 100 },
 
-  // Program Card Styles
   programCard: { 
     height: 180, 
     marginBottom: 20, 
-    borderRadius: 24, 
+    borderRadius: 28, 
     overflow: 'hidden', 
     backgroundColor: '#000', 
-    justifyContent: 'flex-end',
-    elevation: 5,
+    elevation: 8,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 10 },
-    shadowOpacity: 0.15,
-    shadowRadius: 20,
+    shadowOpacity: 0.2,
+    shadowRadius: 15,
   },
-  programImage: { ...StyleSheet.absoluteFillObject, opacity: 0.9 },
-  programOverlay: { 
-    ...StyleSheet.absoluteFillObject, 
-    backgroundColor: 'rgba(0,0,0,0.3)' 
-  },
+  activeCardBorder: { borderWidth: 2, borderColor: '#000' },
+  programImage: { ...StyleSheet.absoluteFillObject, opacity: 0.8 },
+  programOverlay: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.2)' },
   programInfo: { padding: 25, flex: 1, justifyContent: 'flex-end' },
-  statusBadge: { 
-    backgroundColor: 'rgba(0, 0, 0, 0.34)', 
-    paddingHorizontal: 10, 
-    paddingVertical: 6, 
-    borderRadius: 8, 
-    alignSelf: 'flex-start', 
-    marginBottom: 10 
-  },
-  statusText: { color: '#fff', fontSize: 11, fontWeight: '900', textTransform: 'uppercase' },
-  programTitle: { color: '#fff', fontSize: 24, fontWeight: '800', marginBottom: 6 },
-  arrowCircle: { 
-    position: 'absolute', 
-    top: 20, 
-    right: 20, 
-    width: 40, 
-    height: 40, 
-    borderRadius: 20, 
-    backgroundColor: 'rgba(255,255,255,0.9)', 
-    justifyContent: 'center', 
-    alignItems: 'center' 
-  },
+  statusBadge: { backgroundColor: 'rgba(255, 255, 255, 0.2)', paddingHorizontal: 10, paddingVertical: 5, borderRadius: 8, alignSelf: 'flex-start', marginBottom: 8 },
+  activeBadge: { backgroundColor: '#00000085' },
+  statusText: { color: '#fff', fontSize: 11, textTransform: 'uppercase' },
+  programTitle: { color: '#fff', fontSize: 24, fontWeight: '800' },
+  arrowCircle: { position: 'absolute', top: 20, right: 20, width: 36, height: 36, borderRadius: 18, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center' },
 
-  // Add Card Styles
-  optionToAdd:{
-    height: 130,
-    marginBottom: 20,
-    borderRadius: 24,
-    backgroundColor: 'rgba(16,16,16,0.8)',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.14)',
-    justifyContent: 'center',
-  },
-  optionToAddInner: {justifyContent:'center', alignItems:'center'},
-  optionAddIconWrap: {
-    width: 48,
-    height: 48,
-    borderRadius: 24,
-    backgroundColor: 'rgba(255,255,255,0.2)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 8,
-  },
-  optionAddTitle: { color: '#fff', fontSize: 17, fontWeight: '700' },
-  optionAddSubtitle: { color: 'rgba(255,255,255,0.72)', fontSize: 13 },
+  optionToAdd:{ height: 120, marginBottom: 20, borderRadius: 28, backgroundColor: '#f9f9f9', borderWidth: 1, borderColor: '#eee', justifyContent: 'center', alignItems: 'center' },
+  optionToAddInner: { alignItems: 'center' },
+  optionAddIconWrap: { width: 44, height: 44, borderRadius: 22, backgroundColor: '#000', justifyContent: 'center', alignItems: 'center', marginBottom: 6 },
+  optionAddTitle: { color: '#000', fontSize: 16, fontWeight: '700' },
+  optionAddSubtitle: { color: '#888', fontSize: 12 },
 
-  // Fake Modal (Absolute View) Styles
-  modalBackdrop: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'flex-start',
-    paddingTop: 140, // Adjust based on where you want the card to appear
-    paddingHorizontal: 20,
-    zIndex: 999, // Ensure it sits on top of the list
-  },
-  modalCard: {
-    borderRadius: 18,
-    padding: 18,
-    backgroundColor: '#161616',
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.12)',
-  },
-  modalTitle: { color: '#fff', fontSize: 22, fontWeight: '800', marginBottom: 4 },
-  modalSubtitle: { color: 'rgba(255,255,255,0.7)', fontSize: 13, marginBottom: 14 },
-  input: {
-    height: 46,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: 'rgba(255,255,255,0.18)',
-    paddingHorizontal: 12,
-    color: '#fff',
-    backgroundColor: 'rgba(255,255,255,0.04)',
-    marginBottom: 10,
-  },
-  modalActions: { flexDirection: 'row', gap: 10, marginTop: 8 },
-  actionButton: { flex: 1, borderRadius: 12, paddingVertical: 12, alignItems: 'center' },
-  cancelButton: { backgroundColor: 'rgba(255,255,255,0.08)' },
-  createButton: { backgroundColor: '#fff' },
-  cancelButtonText: { color: '#fff', fontWeight: '700' },
-  createButtonText: { color: '#111', fontWeight: '800' },
+  // Modal (Absolute View)
+  modalOverlay: { ...StyleSheet.absoluteFillObject, justifyContent: 'center', padding: 25, zIndex: 1000 },
+  backdropBlur: { ...StyleSheet.absoluteFillObject, backgroundColor: 'rgba(0,0,0,0.6)' },
+  modalCard: { backgroundColor: '#fff', borderRadius: 24, padding: 24, elevation: 20 },
+  modalTitle: { fontSize: 20, fontWeight: '900', marginBottom: 20 },
+  input: { backgroundColor: '#f4f4f4', borderRadius: 12, padding: 15, fontSize: 16, marginBottom: 20, color: '#000' },
+  modalActions: { flexDirection: 'row', gap: 10 },
+  cancelButton: { flex: 1, padding: 15, alignItems: 'center' },
+  createButton: { flex: 2, backgroundColor: '#000', padding: 15, borderRadius: 12, alignItems: 'center' },
+  cancelText: { fontWeight: '700', color: '#888' },
+  createText: { fontWeight: '800', color: '#fff' },
 });
