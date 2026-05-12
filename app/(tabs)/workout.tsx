@@ -95,6 +95,7 @@ export default function WorkoutScreen() {
             id: `set-${Date.now()}-${Math.random()}`,
             reps: '',
             weight: '',
+            rpe: 0,
           };
           return { ...ex, sets: [...ex.sets, newSet] };
         }),
@@ -120,6 +121,27 @@ export default function WorkoutScreen() {
             sets: ex.sets.map(s =>
               s.id === setId ? { ...s, [field]: value } : s
             ),
+          };
+        }),
+      };
+    });
+  };
+
+  const handleUpdateSetRpe = (
+    workoutId: string,
+    exerciseId: string,
+    setId: string,
+    rpe: number
+  ) => {
+    setExerciseMap(prev => {
+      const exercises = prev[workoutId] ?? [];
+      return {
+        ...prev,
+        [workoutId]: exercises.map(ex => {
+          if (ex.id !== exerciseId) return ex;
+          return {
+            ...ex,
+            sets: ex.sets.map(s => s.id === setId ? { ...s, rpe } : s),
           };
         }),
       };
@@ -163,6 +185,9 @@ export default function WorkoutScreen() {
           onAddSet={(exId) => handleAddSet(activeWorkout.id, exId)}
           onUpdateSet={(exId, setId, field, value) =>
             handleUpdateSet(activeWorkout.id, exId, setId, field, value)
+          }
+          onUpdateSetRpe={(exId, setId, rpe) =>
+            handleUpdateSetRpe(activeWorkout.id, exId, setId, rpe)
           }
           onDeleteSet={(exId, setId) => handleDeleteSet(activeWorkout.id, exId, setId)}
           onDeleteExercise={(exId) => handleDeleteExercise(activeWorkout.id, exId)}
