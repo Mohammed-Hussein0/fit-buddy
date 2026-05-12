@@ -1,10 +1,10 @@
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { StyleSheet, Text, TouchableOpacity, View, Alert } from "react-native";
+import { StyleSheet, Text, TouchableOpacity, View } from "react-native";
 import { Swipeable } from "react-native-gesture-handler";
 
 const DAYS_SHORT = ["SUN", "MON", "TUE", "WED", "THU", "FRI", "SAT"];
 
-export const WorkoutRow = ({ item, isToday, onDelete }: any) => {
+export const WorkoutRow = ({ item, isToday, onDelete, onSelectWorkout }: any) => {
   const renderRightActions = () => (
     <TouchableOpacity style={styles.deleteAction} onPress={onDelete}>
       <Ionicons name="trash-outline" size={24} color="#fff" />
@@ -13,9 +13,9 @@ export const WorkoutRow = ({ item, isToday, onDelete }: any) => {
 
   return (
     <Swipeable renderRightActions={renderRightActions}>
-      <TouchableOpacity 
-        style={[styles.row, isToday && styles.todayRow]} 
-        onPress={() => Alert.alert("Workout", "Opening " + item.title)}
+      <TouchableOpacity
+        style={[styles.row, isToday && styles.todayRow]}
+        onPress={() => onSelectWorkout && onSelectWorkout(item)}
         activeOpacity={0.7}
       >
         <View style={[styles.dayBadge, isToday && styles.todayBadge]}>

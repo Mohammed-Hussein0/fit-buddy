@@ -8,7 +8,7 @@ import { TouchableOpacity } from "react-native";
 import { WorkoutRow } from "./workout-schedule/WorkoutRow";
 import { AddWorkoutForm } from "./workout-schedule/AddWorkoutForm";
 
-export default function WeeklySchedule({ activeProgram, workouts, onAddWorkout, onDeleteWorkout, handleBackToPrograms }: any) {
+export default function WeeklySchedule({ activeProgram, workouts, onAddWorkout, onDeleteWorkout, handleBackToPrograms, onSelectWorkout }: any) {
   const [isAddMode, setIsAddMode] = useState(false);
   const [newTitle, setNewTitle] = useState("");
   const [newNote, setNewNote] = useState("");
@@ -75,6 +75,7 @@ export default function WeeklySchedule({ activeProgram, workouts, onAddWorkout, 
               item={item}
               isToday={item.dayOfWeek === todayNum}
               onDelete={() => onDeleteWorkout(item.id)}
+              onSelectWorkout={onSelectWorkout}
             />
           )}
           contentContainerStyle={styles.listContent}
