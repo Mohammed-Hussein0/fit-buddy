@@ -174,11 +174,12 @@ const MUSCLE_GROUP_ICONS: Record<string, string> = {
 };
 
 // RPE color by value
-function rpeColor(rpe: number): { bg: string; text: string } {
-  if (rpe <= 3) return { bg: '#00B894', text: '#fff' };
-  if (rpe <= 6) return { bg: '#FDCB6E', text: '#6D4C00' };
-  if (rpe <= 8) return { bg: '#E17055', text: '#fff' };
-  return { bg: '#D63031', text: '#fff' };
+function rpeTextColor(rpe: number): string {
+  if (rpe === 0) return '#CCC';
+  if (rpe <= 3) return '#00B894';
+  if (rpe <= 6) return '#E6A817';
+  if (rpe <= 8) return '#E17055';
+  return '#D63031';
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -191,32 +192,49 @@ function MuscleBadge({ group }: { group: string }) {
   );
 }
 
-function RpeSelector({ value, onChange }: { value: number; onChange: (rpe: number) => void }) {
+function RpeStepper({ value, onChange }: { value: number; onChange: (rpe: number) => void }) {
+  const [editing, setEditing] = useState(false);
+  const [draft, setDraft] = useState('');
+
+  const dec = () => onChange(Math.max(0, value - 1));
+  const inc = () => onChange(Math.min(10, value + 1));
+
+  const commitDraft = () => {
+    const n = parseInt(draft, 10);
+    if (!isNaN(n) && n >= 1 && n <= 10) onChange(n);
+    else if (draft === '' || draft === '0') onChange(0);
+    setEditing(false);
+  };
+
   return (
-    <View style={styles.rpeRow}>
-      <Text style={styles.rpeLabel}>RPE</Text>
-      <View style={styles.rpeDots}>
-        {Array.from({ length: 10 }, (_, i) => i + 1).map(n => {
-          const isSelected = value === n;
-          const color = rpeColor(n);
-          return (
-            <TouchableOpacity
-              key={n}
-              onPress={() => onChange(value === n ? 0 : n)}
-              style={[
-                styles.rpeDot,
-                isSelected
-                  ? { backgroundColor: color.bg, borderColor: color.bg }
-                  : { backgroundColor: '#F4F4F4', borderColor: '#E8E8E8' },
-              ]}
-            >
-              <Text style={[styles.rpeDotText, isSelected ? { color: color.text, fontWeight: '800' } : {}]}>
-                {n}
-              </Text>
-            </TouchableOpacity>
-          );
-        })}
-      </View>
+    <View style={styles.rpeStepper}>
+      <TouchableOpacity onPress={dec} style={styles.rpeStepBtn} disabled={value <= 0}>
+        <Ionicons name="remove" size={12} color={value <= 0 ? '#DDD' : '#666'} />
+      </TouchableOpacity>
+
+      {editing ? (
+        <TextInput
+          style={styles.rpeStepInput}
+          value={draft}
+          onChangeText={setDraft}
+          keyboardType="number-pad"
+          maxLength={2}
+          autoFocus
+          onBlur={commitDraft}
+          onSubmitEditing={commitDraft}
+          selectTextOnFocus
+        />
+      ) : (
+        <TouchableOpacity onPress={() => { setDraft(value > 0 ? String(value) : ''); setEditing(true); }}>
+          <Text style={[styles.rpeStepValue, { color: rpeTextColor(value) }]}>
+            {value === 0 ? '—' : value}
+          </Text>
+        </TouchableOpacity>
+      )}
+
+      <TouchableOpacity onPress={inc} style={styles.rpeStepBtn} disabled={value >= 10}>
+        <Ionicons name="add" size={12} color={value >= 10 ? '#DDD' : '#666'} />
+      </TouchableOpacity>
     </View>
   );
 }
@@ -229,45 +247,41 @@ function SetRow({ set, index, onUpdate, onUpdateRpe, onDelete }: {
   onDelete: () => void;
 }) {
   return (
-    <View style={styles.setCard}>
-      <View style={styles.setCardHeader}>
-        <Text style={styles.setNumber}>Set {index + 1}</Text>
-        <TouchableOpacity onPress={onDelete} style={styles.setDeleteBtn}>
-          <Ionicons name="trash-outline" size={14} color="#FF4444" />
-        </TouchableOpacity>
-      </View>
+    <View style={styles.setRow}>
+      {/* SET # */}
+      <Text style={styles.setNum}>{index + 1}</Text>
 
-      <View style={styles.setInputRow}>
-        <View style={styles.setField}>
-          <Text style={styles.setLabel}>KG</Text>
-          <TextInput
-            style={styles.setInput}
-            value={set.weight}
-            onChangeText={v => onUpdate('weight', v)}
-            keyboardType="decimal-pad"
-            placeholder="—"
-            placeholderTextColor="#CCC"
-            maxLength={5}
-            textAlign="center"
-          />
-        </View>
-        <View style={styles.setDivider} />
-        <View style={styles.setField}>
-          <Text style={styles.setLabel}>REPS</Text>
-          <TextInput
-            style={styles.setInput}
-            value={set.reps}
-            onChangeText={v => onUpdate('reps', v)}
-            keyboardType="number-pad"
-            placeholder="—"
-            placeholderTextColor="#CCC"
-            maxLength={3}
-            textAlign="center"
-          />
-        </View>
-      </View>
+      {/* KG */}
+      <TextInput
+        style={styles.setInput}
+        value={set.weight}
+        onChangeText={v => onUpdate('weight', v)}
+        keyboardType="decimal-pad"
+        placeholder="—"
+        placeholderTextColor="#CCC"
+        maxLength={5}
+        textAlign="center"
+      />
 
-      <RpeSelector value={set.rpe} onChange={onUpdateRpe} />
+      {/* REPS */}
+      <TextInput
+        style={styles.setInput}
+        value={set.reps}
+        onChangeText={v => onUpdate('reps', v)}
+        keyboardType="number-pad"
+        placeholder="—"
+        placeholderTextColor="#CCC"
+        maxLength={3}
+        textAlign="center"
+      />
+
+      {/* RPE stepper */}
+      <RpeStepper value={set.rpe} onChange={onUpdateRpe} />
+
+      {/* Delete */}
+      <TouchableOpacity onPress={onDelete} style={styles.setDeleteBtn}>
+        <Ionicons name="remove-circle-outline" size={18} color="#FF4444" />
+      </TouchableOpacity>
     </View>
   );
 }
@@ -280,44 +294,78 @@ function ExerciseCard({ exercise, onAddSet, onUpdateSet, onUpdateSetRpe, onDelet
   onDeleteSet: (setId: string) => void;
   onDelete: () => void;
 }) {
+  const [expanded, setExpanded] = useState(true);
   const colors = MUSCLE_COLORS[exercise.muscleGroup];
+
   return (
     <View style={styles.exerciseCard}>
-      {/* Image Banner */}
-      <View style={styles.exerciseImageWrap}>
+      {/* ── Header row (tap to expand/collapse) ── */}
+      <TouchableOpacity
+        style={styles.exerciseHeader}
+        onPress={() => setExpanded(e => !e)}
+        activeOpacity={0.75}
+      >
+        {/* Thumbnail */}
         <Image
           source={{ uri: exercise.imageUrl }}
-          style={styles.exerciseImage}
+          style={styles.exerciseThumb}
           resizeMode="cover"
         />
-        <View style={styles.exerciseImageOverlay} />
-        <View style={styles.exerciseImageBadge}>
+
+        {/* Title + badge */}
+        <View style={{ flex: 1, marginHorizontal: 12 }}>
+          <Text style={styles.exerciseName} numberOfLines={1}>{exercise.name}</Text>
           <MuscleBadge group={exercise.muscleGroup} />
         </View>
-        <TouchableOpacity style={styles.deleteExBtn} onPress={onDelete}>
-          <Ionicons name="trash-outline" size={15} color="#fff" />
+
+        {/* Actions */}
+        <TouchableOpacity
+          style={styles.addSetBtnSmall}
+          onPress={e => { e.stopPropagation?.(); onAddSet(); setExpanded(true); }}
+        >
+          <Ionicons name="add" size={16} color="#000" />
         </TouchableOpacity>
-      </View>
+        <TouchableOpacity style={styles.deleteExBtn} onPress={e => { e.stopPropagation?.(); onDelete(); }}>
+          <Ionicons name="trash-outline" size={14} color="#FF4444" />
+        </TouchableOpacity>
+        <Ionicons
+          name={expanded ? 'chevron-up' : 'chevron-down'}
+          size={16} color="#BBB"
+          style={{ marginLeft: 6 }}
+        />
+      </TouchableOpacity>
 
-      <View style={styles.exerciseBody}>
-        <Text style={styles.exerciseName}>{exercise.name}</Text>
+      {/* ── Expanded sets ── */}
+      {expanded && exercise.sets.length > 0 && (
+        <View style={styles.setsSection}>
+          {/* Column headers */}
+          <View style={styles.setsHeaderRow}>
+            <Text style={[styles.setsColLabel, { width: 24, textAlign: 'center' }]}>SET</Text>
+            <Text style={[styles.setsColLabel, { flex: 1, textAlign: 'center' }]}>KG</Text>
+            <Text style={[styles.setsColLabel, { flex: 1, textAlign: 'center' }]}>REPS</Text>
+            <Text style={[styles.setsColLabel, { width: 80, textAlign: 'center' }]}>RPE</Text>
+            <View style={{ width: 26 }} />
+          </View>
 
-        {exercise.sets.map((set, idx) => (
-          <SetRow
-            key={set.id}
-            set={set}
-            index={idx}
-            onUpdate={(field, value) => onUpdateSet(set.id, field, value)}
-            onUpdateRpe={(rpe) => onUpdateSetRpe(set.id, rpe)}
-            onDelete={() => onDeleteSet(set.id)}
-          />
-        ))}
+          {exercise.sets.map((set, idx) => (
+            <SetRow
+              key={set.id}
+              set={set}
+              index={idx}
+              onUpdate={(field, value) => onUpdateSet(set.id, field, value)}
+              onUpdateRpe={rpe => onUpdateSetRpe(set.id, rpe)}
+              onDelete={() => onDeleteSet(set.id)}
+            />
+          ))}
+        </View>
+      )}
 
+      {expanded && (
         <TouchableOpacity style={styles.addSetBtn} onPress={onAddSet}>
-          <Ionicons name="add" size={15} color="#000" />
+          <Ionicons name="add" size={14} color="#888" />
           <Text style={styles.addSetText}>Add Set</Text>
         </TouchableOpacity>
-      </View>
+      )}
     </View>
   );
 }
@@ -557,79 +605,95 @@ const styles = StyleSheet.create({
   listContent: { paddingHorizontal: 16, paddingBottom: 80 },
 
   // Badge
-  badge: { alignSelf: 'flex-start', paddingHorizontal: 9, paddingVertical: 3, borderRadius: 7 },
+  badge: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
   badgeText: { fontSize: 10, fontWeight: '700' },
 
   // Exercise Card
   exerciseCard: {
-    backgroundColor: '#fff', borderRadius: 20,
-    marginBottom: 16, overflow: 'hidden',
-    shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 10,
-    shadowOffset: { width: 0, height: 3 }, elevation: 3,
-  },
-  exerciseImageWrap: { height: 130, position: 'relative' },
-  exerciseImage: { width: '100%', height: '100%' },
-  exerciseImageOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.25)',
-  },
-  exerciseImageBadge: { position: 'absolute', bottom: 10, left: 14 },
-  deleteExBtn: {
-    position: 'absolute', top: 10, right: 10,
-    width: 32, height: 32, borderRadius: 16,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-    justifyContent: 'center', alignItems: 'center',
-  },
-  exerciseBody: { padding: 14 },
-  exerciseName: { fontSize: 17, fontWeight: '800', color: '#111', marginBottom: 12 },
-
-  // Set card
-  setCard: {
-    backgroundColor: '#F8F8F8', borderRadius: 14,
-    padding: 12, marginBottom: 10,
-  },
-  setCardHeader: {
-    flexDirection: 'row', justifyContent: 'space-between',
-    alignItems: 'center', marginBottom: 8,
-  },
-  setNumber: { fontSize: 11, fontWeight: '800', color: '#AAA', letterSpacing: 1 },
-  setDeleteBtn: {
-    width: 26, height: 26, borderRadius: 13,
-    backgroundColor: '#FFE8E8', justifyContent: 'center', alignItems: 'center',
-  },
-  setInputRow: {
-    flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#fff', borderRadius: 10,
+    backgroundColor: '#fff', borderRadius: 16,
     marginBottom: 10, overflow: 'hidden',
-    borderWidth: 1, borderColor: '#EFEFEF',
+    shadowColor: '#000', shadowOpacity: 0.05, shadowRadius: 8,
+    shadowOffset: { width: 0, height: 2 }, elevation: 2,
   },
-  setField: { flex: 1, alignItems: 'center', paddingVertical: 8 },
-  setLabel: { fontSize: 8, fontWeight: '900', color: '#BBB', letterSpacing: 1.5, marginBottom: 2 },
-  setInput: {
-    fontSize: 18, fontWeight: '800', color: '#000',
-    textAlign: 'center', minWidth: 50, paddingVertical: 2,
-  },
-  setDivider: { width: 1, height: 36, backgroundColor: '#EFEFEF' },
 
-  // RPE
-  rpeRow: { flexDirection: 'row', alignItems: 'center', gap: 8 },
-  rpeLabel: { fontSize: 9, fontWeight: '900', color: '#BBB', letterSpacing: 1.5, width: 26 },
-  rpeDots: { flexDirection: 'row', gap: 4, flexWrap: 'nowrap', flex: 1 },
-  rpeDot: {
-    flex: 1, height: 26, borderRadius: 7,
-    justifyContent: 'center', alignItems: 'center',
-    borderWidth: 1.5,
+  // Header row
+  exerciseHeader: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingHorizontal: 12, paddingVertical: 10,
   },
-  rpeDotText: { fontSize: 11, fontWeight: '700', color: '#AAA' },
+  exerciseThumb: {
+    width: 48, height: 48, borderRadius: 10,
+    backgroundColor: '#F0F0F0',
+  },
+  exerciseName: { fontSize: 14, fontWeight: '800', color: '#111', marginBottom: 3 },
+  addSetBtnSmall: {
+    width: 30, height: 30, borderRadius: 15,
+    backgroundColor: '#F0F0F0',
+    justifyContent: 'center', alignItems: 'center',
+    marginRight: 6,
+  },
+  deleteExBtn: {
+    width: 30, height: 30, borderRadius: 15,
+    backgroundColor: '#FFF0F0',
+    justifyContent: 'center', alignItems: 'center',
+  },
+
+  // Sets section
+  setsSection: {
+    borderTopWidth: 1, borderTopColor: '#F4F4F4',
+    paddingHorizontal: 12, paddingBottom: 4,
+  },
+  setsHeaderRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#F4F4F4',
+  },
+  setsColLabel: { fontSize: 9, fontWeight: '900', color: '#CCC', letterSpacing: 1 },
+
+  // Set row (horizontal table row)
+  setRow: {
+    flexDirection: 'row', alignItems: 'center',
+    paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#F9F9F9',
+    gap: 4,
+  },
+  setNum: {
+    width: 24, textAlign: 'center',
+    fontSize: 13, fontWeight: '800', color: '#888',
+  },
+  setInput: {
+    flex: 1, fontSize: 15, fontWeight: '700', color: '#111',
+    textAlign: 'center',
+    backgroundColor: '#F8F8F8', borderRadius: 8,
+    paddingVertical: 5,
+  },
+  setDeleteBtn: { width: 26, alignItems: 'center' },
+
+  // RPE stepper
+  rpeStepper: {
+    width: 80, flexDirection: 'row', alignItems: 'center',
+    backgroundColor: '#F8F8F8', borderRadius: 8,
+    overflow: 'hidden',
+  },
+  rpeStepBtn: {
+    width: 24, height: 32,
+    justifyContent: 'center', alignItems: 'center',
+  },
+  rpeStepValue: {
+    width: 32, textAlign: 'center',
+    fontSize: 14, fontWeight: '800',
+  },
+  rpeStepInput: {
+    width: 32, textAlign: 'center',
+    fontSize: 14, fontWeight: '800', color: '#111',
+    paddingVertical: 0,
+  },
 
   // Add set
   addSetBtn: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'center',
-    paddingVertical: 9, borderRadius: 11,
-    borderWidth: 1.5, borderColor: '#E8E8E8', borderStyle: 'dashed', gap: 5,
-    marginTop: 2,
+    paddingVertical: 9, gap: 4,
+    borderTopWidth: 1, borderTopColor: '#F4F4F4',
   },
-  addSetText: { fontSize: 13, fontWeight: '700', color: '#000' },
+  addSetText: { fontSize: 12, fontWeight: '700', color: '#888' },
 
   // Empty
   emptyState: { alignItems: 'center', paddingTop: 80, gap: 10 },
