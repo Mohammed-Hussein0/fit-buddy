@@ -213,7 +213,20 @@ function ExerciseCard({ exercise, onAddSet, onUpdateSet, onDeleteSet, onDelete }
   );
 }
 
-// ─── Exercise Library Picker ──────────────────────────────────────────────────
+// ─── Exercise Library Picker (full-screen) ────────────────────────────────────
+const MUSCLE_GROUP_ICONS: Record<string, string> = {
+  All:       'apps',
+  Chest:     'body',
+  Back:      'trending-up',
+  Shoulders: 'arrow-up',
+  Biceps:    'fitness',
+  Triceps:   'barbell',
+  Legs:      'walk',
+  Core:      'ellipse',
+  Glutes:    'chevron-down',
+  Calves:    'footsteps',
+};
+
 function ExercisePicker({ onAdd, onClose, alreadyAdded }: {
   onAdd: (ex: Omit<WorkoutExercise, 'sets'>) => void;
   onClose: () => void;
@@ -228,85 +241,150 @@ function ExercisePicker({ onAdd, onClose, alreadyAdded }: {
     return matchGroup && matchSearch;
   });
 
+  const activeColors = activeGroup !== 'All' && activeGroup !== 'All'
+    ? MUSCLE_COLORS[activeGroup]
+    : null;
+
   return (
-    <Pressable style={styles.pickerOverlay} onPress={onClose}>
-      <Pressable style={styles.pickerSheet} onPress={e => e.stopPropagation()}>
-        <View style={styles.pickerHandle} />
-        <View style={styles.pickerHeaderRow}>
+    <View style={styles.pickerFullScreen}>
+      {/* Header */}
+      <View style={styles.pickerTopBar}>
+        <TouchableOpacity style={styles.pickerBackBtn} onPress={onClose}>
+          <Ionicons name="chevron-back" size={20} color="#000" />
+        </TouchableOpacity>
+        <View style={{ flex: 1, marginHorizontal: 12 }}>
+          <Text style={styles.pickerScreenLabel}>BROWSE</Text>
           <Text style={styles.pickerTitle}>Exercise Library</Text>
-          <TouchableOpacity onPress={onClose}>
-            <Ionicons name="close" size={24} color="#000" />
+        </View>
+        <View style={styles.pickerCountBadge}>
+          <Text style={styles.pickerCountText}>{filtered.length}</Text>
+        </View>
+      </View>
+
+      {/* Search */}
+      <View style={styles.searchBox}>
+        <Ionicons name="search" size={18} color="#AAA" style={{ marginRight: 10 }} />
+        <TextInput
+          style={styles.searchInput}
+          placeholder="Search exercises..."
+          placeholderTextColor="#AAA"
+          value={search}
+          onChangeText={setSearch}
+          autoCorrect={false}
+        />
+        {search.length > 0 && (
+          <TouchableOpacity onPress={() => setSearch('')}>
+            <Ionicons name="close-circle" size={18} color="#CCC" />
           </TouchableOpacity>
-        </View>
+        )}
+      </View>
 
-        <View style={styles.searchBox}>
-          <Ionicons name="search" size={16} color="#AAA" style={{ marginRight: 8 }} />
-          <TextInput
-            style={styles.searchInput}
-            placeholder="Search exercises..."
-            placeholderTextColor="#AAA"
-            value={search}
-            onChangeText={setSearch}
-          />
-          {search.length > 0 && (
-            <TouchableOpacity onPress={() => setSearch('')}>
-              <Ionicons name="close-circle" size={16} color="#AAA" />
-            </TouchableOpacity>
-          )}
-        </View>
-
-        <ScrollView
-          horizontal
-          showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterRow}
-        >
-          {MUSCLE_GROUPS.map(g => (
+      {/* Muscle group filter grid */}
+      <View style={styles.filterGrid}>
+        {MUSCLE_GROUPS.map(g => {
+          const isActive = activeGroup === g;
+          const colors = g !== 'All' ? MUSCLE_COLORS[g] : null;
+          return (
             <TouchableOpacity
               key={g}
-              style={[styles.filterChip, activeGroup === g && styles.filterChipActive]}
+              style={[
+                styles.filterTile,
+                isActive && colors
+                  ? { backgroundColor: colors.bg, borderColor: colors.text, borderWidth: 2 }
+                  : isActive
+                  ? { backgroundColor: '#111', borderColor: '#111', borderWidth: 2 }
+                  : {},
+              ]}
               onPress={() => setActiveGroup(g)}
             >
-              <Text style={[styles.filterChipText, activeGroup === g && styles.filterChipTextActive]}>{g}</Text>
-            </TouchableOpacity>
-          ))}
-        </ScrollView>
-
-        <FlatList
-          data={filtered}
-          keyExtractor={item => item.name}
-          keyboardShouldPersistTaps="handled"
-          showsVerticalScrollIndicator={false}
-          contentContainerStyle={{ paddingBottom: 40 }}
-          renderItem={({ item }) => {
-            const isAdded = alreadyAdded.includes(item.name);
-            return (
-              <TouchableOpacity
-                style={[styles.libraryRow, isAdded && styles.libraryRowAdded]}
-                onPress={() => {
-                  if (!isAdded) {
-                    onAdd({ id: `ex-${Date.now()}-${Math.random()}`, name: item.name, muscleGroup: item.muscleGroup });
-                  }
-                }}
-                disabled={isAdded}
+              <Ionicons
+                name={MUSCLE_GROUP_ICONS[g] as any}
+                size={16}
+                color={
+                  isActive
+                    ? colors ? colors.text : '#fff'
+                    : '#999'
+                }
+                style={{ marginBottom: 3 }}
+              />
+              <Text
+                style={[
+                  styles.filterTileText,
+                  isActive && colors
+                    ? { color: colors.text, fontWeight: '800' }
+                    : isActive
+                    ? { color: '#fff', fontWeight: '800' }
+                    : {},
+                ]}
+                numberOfLines={1}
               >
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.libraryName, isAdded && { color: '#BBB' }]}>{item.name}</Text>
-                  <MuscleBadge group={item.muscleGroup} />
-                </View>
+                {g}
+              </Text>
+            </TouchableOpacity>
+          );
+        })}
+      </View>
+
+      {/* Divider */}
+      <View style={styles.pickerDivider} />
+
+      {/* Results */}
+      <FlatList
+        data={filtered}
+        keyExtractor={item => item.name}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: 60 }}
+        renderItem={({ item }) => {
+          const isAdded = alreadyAdded.includes(item.name);
+          const rowColors = MUSCLE_COLORS[item.muscleGroup];
+          return (
+            <TouchableOpacity
+              style={[styles.libraryRow, isAdded && styles.libraryRowAdded]}
+              onPress={() => {
+                if (!isAdded) {
+                  onAdd({ id: `ex-${Date.now()}-${Math.random()}`, name: item.name, muscleGroup: item.muscleGroup });
+                }
+              }}
+              disabled={isAdded}
+              activeOpacity={0.7}
+            >
+              <View
+                style={[
+                  styles.libraryGroupDot,
+                  { backgroundColor: rowColors?.bg ?? '#F0F0F0' },
+                ]}
+              >
                 <Ionicons
-                  name={isAdded ? 'checkmark-circle' : 'add-circle-outline'}
-                  size={24}
+                  name={MUSCLE_GROUP_ICONS[item.muscleGroup] as any}
+                  size={16}
+                  color={rowColors?.text ?? '#888'}
+                />
+              </View>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.libraryName, isAdded && { color: '#BBB' }]}>{item.name}</Text>
+                <Text style={[styles.libraryGroup, isAdded && { color: '#DDD' }, rowColors && { color: rowColors.text }]}>
+                  {item.muscleGroup}
+                </Text>
+              </View>
+              <View style={[styles.addIconWrap, isAdded && { backgroundColor: '#E8FFF4' }]}>
+                <Ionicons
+                  name={isAdded ? 'checkmark' : 'add'}
+                  size={18}
                   color={isAdded ? '#00B894' : '#000'}
                 />
-              </TouchableOpacity>
-            );
-          }}
-          ListEmptyComponent={
+              </View>
+            </TouchableOpacity>
+          );
+        }}
+        ListEmptyComponent={
+          <View style={{ alignItems: 'center', paddingTop: 60 }}>
+            <Ionicons name="search-outline" size={40} color="#DDD" />
             <Text style={styles.emptyLibrary}>No exercises found</Text>
-          }
-        />
-      </Pressable>
-    </Pressable>
+          </View>
+        }
+      />
+    </View>
   );
 }
 
@@ -318,6 +396,18 @@ export default function ExerciseDetail({
   const [showPicker, setShowPicker] = useState(false);
 
   const alreadyAdded = exercises.map(e => e.name);
+
+  if (showPicker) {
+    return (
+      <GestureHandlerRootView style={{ flex: 1 }}>
+        <ExercisePicker
+          onAdd={(ex) => { onAddExercise(ex); }}
+          onClose={() => setShowPicker(false)}
+          alreadyAdded={alreadyAdded}
+        />
+      </GestureHandlerRootView>
+    );
+  }
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
@@ -363,14 +453,6 @@ export default function ExerciseDetail({
           />
         </View>
       </Pressable>
-
-      {showPicker && (
-        <ExercisePicker
-          onAdd={(ex) => { onAddExercise(ex); }}
-          onClose={() => setShowPicker(false)}
-          alreadyAdded={alreadyAdded}
-        />
-      )}
     </GestureHandlerRootView>
   );
 }
@@ -460,50 +542,91 @@ const styles = StyleSheet.create({
   emptyTitle: { fontSize: 20, fontWeight: '800', color: '#CCC' },
   emptySubtitle: { fontSize: 14, color: '#CCC', fontWeight: '500' },
 
-  // Picker / Sheet
-  pickerOverlay: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.5)',
-    justifyContent: 'flex-end',
-    zIndex: 100,
+  // ── Full-screen picker ──
+  pickerFullScreen: {
+    flex: 1,
+    backgroundColor: '#F8F8F8',
+    paddingTop: Platform.OS === 'ios' ? 60 : 40,
   },
-  pickerSheet: {
+  pickerTopBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 20,
+    marginBottom: 18,
+  },
+  pickerBackBtn: {
+    width: 44, height: 44, borderRadius: 22,
     backgroundColor: '#fff',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
-    paddingTop: 12,
-    height: '82%',
+    justifyContent: 'center', alignItems: 'center',
+    shadowColor: '#000', shadowOpacity: 0.06, shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 }, elevation: 2,
   },
-  pickerHandle: {
-    width: 36, height: 4, borderRadius: 2,
-    backgroundColor: '#DDD', alignSelf: 'center', marginBottom: 16,
-  },
-  pickerHeaderRow: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: 20, marginBottom: 14,
-  },
+  pickerScreenLabel: { fontSize: 10, fontWeight: '900', letterSpacing: 2, color: '#AAA' },
   pickerTitle: { fontSize: 22, fontWeight: '900', color: '#000' },
+  pickerCountBadge: {
+    backgroundColor: '#111', borderRadius: 14,
+    paddingHorizontal: 12, paddingVertical: 6,
+  },
+  pickerCountText: { color: '#fff', fontSize: 13, fontWeight: '800' },
+
   searchBox: {
     flexDirection: 'row', alignItems: 'center',
-    backgroundColor: '#F4F4F4', borderRadius: 14,
-    paddingHorizontal: 14, paddingVertical: 10,
-    marginHorizontal: 16, marginBottom: 12,
+    backgroundColor: '#fff',
+    borderRadius: 16,
+    paddingHorizontal: 16, paddingVertical: 12,
+    marginHorizontal: 20, marginBottom: 16,
+    shadowColor: '#000', shadowOpacity: 0.04, shadowRadius: 6,
+    shadowOffset: { width: 0, height: 2 }, elevation: 1,
   },
-  searchInput: { flex: 1, fontSize: 15, color: '#000', fontWeight: '500' },
-  filterRow: { paddingHorizontal: 16, gap: 8, marginBottom: 12 },
-  filterChip: {
-    paddingHorizontal: 16, paddingVertical: 8, borderRadius: 20,
-    backgroundColor: '#F4F4F4', borderWidth: 1.5, borderColor: '#F4F4F4',
+  searchInput: { flex: 1, fontSize: 16, color: '#000', fontWeight: '500' },
+
+  // Filter grid (tiled chips)
+  filterGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: 16,
+    gap: 8,
+    marginBottom: 16,
   },
-  filterChipActive: { backgroundColor: '#000', borderColor: '#000' },
-  filterChipText: { fontSize: 13, fontWeight: '700', color: '#666' },
-  filterChipTextActive: { color: '#fff' },
+  filterTile: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 12,
+    backgroundColor: '#fff',
+    borderWidth: 1.5,
+    borderColor: '#EFEFEF',
+  },
+  filterTileText: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: '#999',
+  },
+
+  pickerDivider: {
+    height: 1, backgroundColor: '#EFEFEF', marginHorizontal: 20, marginBottom: 8,
+  },
+
   libraryRow: {
     flexDirection: 'row', alignItems: 'center',
     paddingHorizontal: 20, paddingVertical: 14,
     borderBottomWidth: 1, borderBottomColor: '#F4F4F4',
+    backgroundColor: '#F8F8F8',
   },
-  libraryRowAdded: { opacity: 0.5 },
-  libraryName: { fontSize: 16, fontWeight: '700', color: '#111', marginBottom: 4 },
-  emptyLibrary: { textAlign: 'center', marginTop: 40, color: '#CCC', fontWeight: '700', fontSize: 16 },
+  libraryRowAdded: { opacity: 0.45 },
+  libraryGroupDot: {
+    width: 40, height: 40, borderRadius: 12,
+    justifyContent: 'center', alignItems: 'center',
+    marginRight: 14,
+  },
+  libraryName: { fontSize: 16, fontWeight: '700', color: '#111', marginBottom: 2 },
+  libraryGroup: { fontSize: 12, fontWeight: '600', color: '#AAA' },
+  addIconWrap: {
+    width: 34, height: 34, borderRadius: 17,
+    backgroundColor: '#F0F0F0',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  emptyLibrary: { marginTop: 12, color: '#CCC', fontWeight: '700', fontSize: 16 },
 });
