@@ -21,7 +21,7 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   },
 });
 
-export const picApi = "AQ.Ab8RN6IGtXafv1MB-nVDQ3ho1yt9-qguNpFl57JpOmRmqH1urg";
+export const picApi = process.env.EXPO_PUBLIC_PIC_API_KEY ?? "";
 
 export async function signInWithGoogle() {
   return { error: new Error('Google Sign-In is not available on this platform') };
