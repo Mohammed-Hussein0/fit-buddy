@@ -11,8 +11,7 @@ app.use(cors());
 const upload = multer({ storage: multer.memoryStorage() });
 
 // FIX: Initialize correctly. Leaving the constructor empty lets it natively pull GEMINI_API_KEY from process.env
-const ai = new GoogleGenAI();
-
+const ai = new GoogleGenAI({});
 app.post('/analyze', upload.fields([{ name: 'front' }, { name: 'back' }]), async (req, res) => {
   console.log("🚀 [BACKEND]: Received incoming analysis request payload.");
   
