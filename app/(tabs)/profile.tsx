@@ -12,6 +12,7 @@ import WeightChart from "../profile-tab/weight-progress";
 import QuoteCard from "../profile-tab/quote-card";
 import ProfileInfo from "../profile-tab/profile-info";
 import DailyHabits from "../profile-tab/daily-habits";
+import ProfileStepsSection from "../profile-tab/profile-steps";
 import { useAuth } from "../context/auth";
 import { useUser } from "../context/UserInfo";
 
@@ -56,6 +57,8 @@ export default function ProfileTab() {
           workouts="12" 
           streak="5"   
         />
+
+        <ProfileStepsSection embedded />
 
       </View>
 

@@ -10,7 +10,10 @@
     "newArchEnabled": true,
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.moghz.fitbuddy"
+      "bundleIdentifier": "com.moghz.fitbuddy",
+      "infoPlist": {
+        "NSMotionUsageDescription": "Fit Buddy reads your step count to show today’s activity on your profile."
+      }
     },
     "android": {
       "package": "com.moghz.fitbuddy",
@@ -24,7 +27,8 @@
       "predictiveBackGestureEnabled": false,
       "usesCleartextTraffic": true,
       "permissions": [
-        "INTERNET"
+        "INTERNET",
+        "android.permission.ACTIVITY_RECOGNITION"
       ]
     },
     "web": {

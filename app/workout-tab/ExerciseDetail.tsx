@@ -25,7 +25,9 @@ export interface WorkoutExercise {
 interface Props {
   workoutTitle: string;
   exercises: WorkoutExercise[];
+  exerciseDraftDirty?: boolean;
   onBack: () => void;
+  onSave: () => void | Promise<void>;
   onAddExercise: (ex: Omit<WorkoutExercise, 'sets'>) => void;
   onAddSet: (exerciseId: string) => void;
   onUpdateSet: (exerciseId: string, setId: string, field: 'reps' | 'weight', value: string) => void;
@@ -253,7 +255,7 @@ function SetRow({ set, index, onUpdate, onUpdateRpe, onDelete }: {
 
       {/* KG */}
       <TextInput
-        style={styles.setInput}
+        style={[styles.setInput, styles.setInputKg]}
         value={set.weight}
         onChangeText={v => onUpdate('weight', v)}
         keyboardType="decimal-pad"
@@ -265,7 +267,7 @@ function SetRow({ set, index, onUpdate, onUpdateRpe, onDelete }: {
 
       {/* REPS */}
       <TextInput
-        style={styles.setInput}
+        style={[styles.setInput, styles.setInputReps]}
         value={set.reps}
         onChangeText={v => onUpdate('reps', v)}
         keyboardType="number-pad"
@@ -340,11 +342,11 @@ function ExerciseCard({ exercise, onAddSet, onUpdateSet, onUpdateSetRpe, onDelet
         <View style={styles.setsSection}>
           {/* Column headers */}
           <View style={styles.setsHeaderRow}>
-            <Text style={[styles.setsColLabel, { width: 24, textAlign: 'center' }]}>SET</Text>
-            <Text style={[styles.setsColLabel, { flex: 1, textAlign: 'center' }]}>KG</Text>
-            <Text style={[styles.setsColLabel, { flex: 1, textAlign: 'center' }]}>REPS</Text>
-            <Text style={[styles.setsColLabel, { width: 80, textAlign: 'center' }]}>RPE</Text>
-            <View style={{ width: 26 }} />
+            <Text style={[styles.setsColLabel, styles.setsColSet]}>SET</Text>
+            <Text style={[styles.setsColLabel, styles.setsColKg]}>KG</Text>
+            <Text style={[styles.setsColLabel, styles.setsColReps]}>REPS</Text>
+            <Text style={[styles.setsColLabel, styles.setsColRpe]}>RPE</Text>
+            <View style={styles.setsColDeleteSpacer} />
           </View>
 
           {exercise.sets.map((set, idx) => (
@@ -514,8 +516,17 @@ function ExercisePicker({ onAdd, onClose, alreadyAdded }: {
 
 // ─── Main Component ───────────────────────────────────────────────────────────
 export default function ExerciseDetail({
-  workoutTitle, exercises, onBack, onAddExercise, onAddSet,
-  onUpdateSet, onUpdateSetRpe, onDeleteSet, onDeleteExercise,
+  workoutTitle,
+  exercises,
+  exerciseDraftDirty = false,
+  onBack,
+  onSave,
+  onAddExercise,
+  onAddSet,
+  onUpdateSet,
+  onUpdateSetRpe,
+  onDeleteSet,
+  onDeleteExercise,
 }: Props) {
   const [showPicker, setShowPicker] = useState(false);
 
@@ -550,10 +561,11 @@ export default function ExerciseDetail({
             </TouchableOpacity>
           </View>
 
-          <FlatList
+          <View style={styles.listWrap}>
+            <FlatList
             data={exercises}
             keyExtractor={item => item.id}
-            contentContainerStyle={styles.listContent}
+            contentContainerStyle={styles.listContentScroll}
             keyboardShouldPersistTaps="handled"
             showsVerticalScrollIndicator={false}
             renderItem={({ item }) => (
@@ -573,7 +585,21 @@ export default function ExerciseDetail({
                 <Text style={styles.emptySubtitle}>Tap + to browse the exercise library</Text>
               </View>
             }
+            ListFooterComponent={
+              exerciseDraftDirty ? (
+                <View style={styles.listSaveFooter}>
+                  <TouchableOpacity
+                    style={styles.listSaveBtn}
+                    onPress={() => { void Promise.resolve(onSave()); }}
+                    activeOpacity={0.75}
+                  >
+                    <Text style={styles.listSaveBtnText}>Save</Text>
+                  </TouchableOpacity>
+                </View>
+              ) : null
+            }
           />
+          </View>
         </View>
       </Pressable>
     </GestureHandlerRootView>
@@ -603,6 +629,24 @@ const styles = StyleSheet.create({
     backgroundColor: '#000', justifyContent: 'center', alignItems: 'center',
   },
   listContent: { paddingHorizontal: 16, paddingBottom: 80 },
+  listWrap: { flex: 1 },
+  listContentScroll: {
+    paddingHorizontal: 16,
+    paddingBottom: Platform.OS === 'ios' ? 36 : 24,
+    flexGrow: 1,
+  },
+  listSaveFooter: {
+    marginTop: 8,
+    paddingBottom: 8,
+  },
+  listSaveBtn: {
+    height: 48,
+    borderRadius: 12,
+    backgroundColor: '#000',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  listSaveBtnText: { fontSize: 16, fontWeight: '700', color: '#fff' },
 
   // Badge
   badge: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 6 },
@@ -648,6 +692,11 @@ const styles = StyleSheet.create({
     paddingVertical: 6, borderBottomWidth: 1, borderBottomColor: '#F4F4F4',
   },
   setsColLabel: { fontSize: 9, fontWeight: '900', color: '#CCC', letterSpacing: 1 },
+  setsColSet: { width: 24, textAlign: 'center' },
+  setsColKg: { width: 58, textAlign: 'center' },
+  setsColReps: { width: 50, textAlign: 'center' },
+  setsColRpe: { width: 80, textAlign: 'center' },
+  setsColDeleteSpacer: { width: 26 },
 
   // Set row (horizontal table row)
   setRow: {
@@ -660,11 +709,18 @@ const styles = StyleSheet.create({
     fontSize: 13, fontWeight: '800', color: '#888',
   },
   setInput: {
-    flex: 1, fontSize: 15, fontWeight: '700', color: '#111',
+    fontSize: 14, fontWeight: '700', color: '#111',
     textAlign: 'center',
     backgroundColor: '#F8F8F8', borderRadius: 8,
-    paddingVertical: 5,
+    paddingVertical: Platform.OS === 'android' ? 4 : 6,
+    paddingHorizontal: 4,
+    minHeight: 34,
+    maxHeight: 36,
+    overflow: 'hidden',
+    ...(Platform.OS === 'android' ? { includeFontPadding: false } : {}),
   },
+  setInputKg: { width: 58, flexGrow: 0 },
+  setInputReps: { width: 50, flexGrow: 0 },
   setDeleteBtn: { width: 26, alignItems: 'center' },
 
   // RPE stepper
