@@ -1,20 +1,25 @@
 import express from 'express';
 import multer from 'multer';
 import dotenv from 'dotenv';
+import cors from 'cors';
+import { GoogleGenAI } from '@google/genai';
 
 dotenv.config();
 
 const app = express();
-const upload = multer({ storage: multer.memoryStorage() }); 
+app.use(cors());
+const upload = multer({ storage: multer.memoryStorage() });
 
-// The wildcard model string for free testing
-const MODEL = "google/gemini-2.5-flash:free";
+// FIX: Initialize correctly. Leaving the constructor empty lets it natively pull GEMINI_API_KEY from process.env
+const ai = new GoogleGenAI();
+
 app.post('/analyze', upload.fields([{ name: 'front' }, { name: 'back' }]), async (req, res) => {
-    try {
-    // FIX 1: Look for your correct OpenRouter key
-    const apiKey = process.env.OPENROUTER_API_KEY;
-    if (!apiKey) {
-      return res.status(500).send("Server configuration error: Missing OPENROUTER_API_KEY.");
+  console.log("🚀 [BACKEND]: Received incoming analysis request payload.");
+  
+  try {
+    if (!process.env.GEMINI_API_KEY) {
+      console.error("❌ [BACKEND ERROR]: GEMINI_API_KEY environment variable is completely missing.");
+      return res.status(500).send("Server configuration error: Missing GEMINI_API_KEY.");
     }
 
     if (!req.files || !req.files['front'] || !req.files['back']) {
@@ -26,19 +31,19 @@ app.post('/analyze', upload.fields([{ name: 'front' }, { name: 'back' }]), async
 
     const promptText = `
       You are a professional physique competition judge and coach.
-
-      Analyze the provided front and back photos, legs do not matter now.
+      Analyze the provided front and back photos. Legs do not matter now.
 
       CRITICAL RULE: If the photos are blurry, too dark, do not show a human upper body,
       or are otherwise unusable for a physique review, start your response ONLY with
-      the word "REJECTED" followed by the reason why, but if the subject is wearing tight clothes start with a warning about how it is hard to judge with clothes but try and give an assessment
-      if the clothes are to baggy then reject.
+      the word "REJECTED" followed by the reason why. If the subject is wearing tight clothes, 
+      start with a warning about how it is hard to judge with clothes but try to give an assessment.
+      If the clothes are too baggy, then reject.
 
-      also take note that a lot of photos will be of people posing so make sure you do not get tricked by it
+      Take note that a lot of photos will be of people posing, so do not get tricked by it.
       If valid, provide the review in this format:
 
       OVERALL REVIEW:
-      [2-3 sentences summarizing the user's current physique, try mentioning 1-2 strong points like "broad clavicles" or "good lat width" only if they actually exist do not lie.]
+      [2-3 sentences summarizing the user's current physique, mentioning 1-2 strong points only if they actually exist.]
 
       LAGGING GROUPS:
       - [Muscle Group]: [Blunt reason why it's lagging].
@@ -50,48 +55,35 @@ app.post('/analyze', upload.fields([{ name: 'front' }, { name: 'back' }]), async
       Tone: Professional, blunt, and encouraging. No fluff.
     `;
 
-    // FIX 2: Hit OpenRouter's actual endpoint and pass the OpenAI-compliant layout
-    const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${apiKey}`,
-        "Content-Type": "application/json",
-        "HTTP-Referer": "http://localhost:3000", 
-        "X-Title": "FitBuddy Testing"            
-      },
-      body: JSON.stringify({
-        model: MODEL,
-        messages: [
-          {
-            role: "user",
-            content: [
-              { type: "text", text: promptText },
-              { type: "image_url", image_url: { url: `data:image/jpeg;base64,${frontBase64}` } },
-              { type: "image_url", image_url: { url: `data:image/jpeg;base64,${backBase64}` } }
-            ]
+    // FIX: Using the correct direct SDK method call
+    const response = await ai.models.generateContent({
+      model: 'gemini-2.5-flash',
+      contents: [
+        promptText,
+        {
+          inlineData: {
+            mimeType: 'image/jpeg',
+            data: frontBase64
           }
-        ]
-      })
+        },
+        {
+          inlineData: {
+            mimeType: 'image/jpeg',
+            data: backBase64
+          }
+        }
+      ],
     });
 
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error("OpenRouter Gateway Error:", errorText);
-      return res.status(502).send("Upstream OpenRouter model returned an error.");
-    }
-
-    const data = await response.json();
-    
-    // FIX 3: Parse the OpenAI format response, not the Gemini candidate format
-    const critiqueText = data.choices[0].message.content;
-
+    const critiqueText = response.text;
+    console.log("✅ [BACKEND]: Response successfully processed from Google API.");
     return res.status(200).send(critiqueText);
 
   } catch (error) {
-    console.error("Internal Server Error:", error);
+    console.error("❌ [BACKEND ERROR]: Direct Gemini compilation failed:", error);
     return res.status(500).send("Internal server error processing physique data.");
   }
 });
 
 const PORT = process.env.PORT || 3000;
-app.listen(PORT, () => console.log(`Secure AI Backend running on port ${PORT}`));
+app.listen(PORT, () => console.log(`Direct Gemini Backend running on port ${PORT}`));
