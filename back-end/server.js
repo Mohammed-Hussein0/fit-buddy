@@ -10,8 +10,8 @@ const upload = multer({ storage: multer.memoryStorage() });
 // The wildcard model string for free testing
 const MODEL = "openrouter/free";
 
-app.post('/api/analyze', upload.fields([{ name: 'front' }, { name: 'back' }]), async (req, res) => {
-  try {
+app.post('/analyze', upload.fields([{ name: 'front' }, { name: 'back' }]), async (req, res) => {
+    try {
     // FIX 1: Look for your correct OpenRouter key
     const apiKey = process.env.OPENROUTER_API_KEY;
     if (!apiKey) {

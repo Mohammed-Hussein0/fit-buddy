@@ -1,31 +1,25 @@
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 
-interface ReactNativeFileValue {
-  uri: string;
-  name: string;
-  type: string;
-}
-
-const BACKEND_URL = "https://fit-buddy-backend.onrender.com/api/analyze";
-
+// Ensure the path ends with /api/analyze
+// Update this line in your frontend physiqueAI.ts file:
+const BACKEND_URL = "https://fit-buddy-backend.onrender.com/analyze";
 /**
- * Compresses an image and formats it for multipart/form-data upload.
+ * Compresses an image and returns a clean object format that 
+ * both iOS and Android native network bridges understand.
  */
-const prepareImage = async (uri: string, filename: string): Promise<Blob> => {
+const prepareImage = async (uri: string, filename: string) => {
   const manipulated = await manipulateAsync(
     uri,
     [{ resize: { width: 720 } }], 
     { compress: 0.7, format: SaveFormat.JPEG }
   );
 
-  const fileConfig: ReactNativeFileValue = {
+  // Return the pure layout React Native expects for files
+  return {
     uri: manipulated.uri,
     name: filename,
     type: 'image/jpeg',
   };
-
-  // Cast to unknown then Blob to satisfy the browser-centric FormData definition safely
-  return fileConfig as unknown as Blob;
 };
 
 /**
@@ -33,14 +27,17 @@ const prepareImage = async (uri: string, filename: string): Promise<Blob> => {
  */
 export const analyzePhysique = async (frontUri: string, backUri: string): Promise<string> => {
   try {
-    const frontBlob = await prepareImage(frontUri, 'front.jpg');
-    const backBlob = await prepareImage(backUri, 'back.jpg');
+    const frontFile = await prepareImage(frontUri, 'front.jpg');
+    const backFile = await prepareImage(backUri, 'back.jpg');
 
     const formData = new FormData();
-    formData.append('front', frontBlob);
-    formData.append('back', backBlob);
+    
+    // Use "as any" to force TypeScript to accept React Native's file object format
+    formData.append('front', frontFile as any);
+    formData.append('back', backFile as any);
 
-    // FIX: Removed the manual headers configuration completely
+    console.log("Sending clean multipart data from phone...");
+
     const response = await fetch(BACKEND_URL, {
       method: 'POST',
       body: formData,
