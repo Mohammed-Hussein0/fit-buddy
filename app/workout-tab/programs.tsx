@@ -14,25 +14,28 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 
 // --- Types ---
-interface Program {
+export interface Program {
   id: string;
   title: string;
   image: string;
 }
 
-interface programScreenProps {
-    handleSelectProgram: (item: Program) => void;
-    currentProgramId?: string; // Allow parent to tell us which is active
+export interface ProgramScreenProps {
+  handleSelectProgram: (item: Program) => void;
+  programs?: Program[];
+  setPrograms?: (programs: Program[]) => void;
+  currentProgramId?: string;
+  setCurrentProgramId?: (id: string) => void;
 }
 
-const MY_PROGRAMS: Program[] = [
+export const MY_PROGRAMS: Program[] = [
   { id: 'p1', title: 'Summer Shred 2026', image: 'https://images.unsplash.com/photo-1581009146145-b5ef050c2e1e?w=600' },
   { id: 'p2', title: 'Winter Bulk',  image: 'https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600' },
   { id: 'p3', title: 'Home Bodyweight',  image: 'https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=600' },
 ];
 
-export default function ProgramScreen({ handleSelectProgram, currentProgramId: initialId }: programScreenProps) {
-  const [programs, setPrograms] = useState<Program[]>(MY_PROGRAMS);
+export default function ProgramScreen({ handleSelectProgram, programs: initialPrograms, setPrograms: setParentPrograms, currentProgramId: initialId, setCurrentProgramId: setParentCurrentProgramId }: ProgramScreenProps) {
+  const [programs, setPrograms] = useState<Program[]>(initialPrograms || MY_PROGRAMS);
   const [currentProgramId, setCurrentProgramId] = useState<string>(initialId || 'p1');
   const [isCreateModalVisible, setIsCreateModalVisible] = useState(false);
   const [newProgramTitle, setNewProgramTitle] = useState('');

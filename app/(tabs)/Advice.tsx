@@ -15,9 +15,9 @@ import {
 } from "react-native";
 
 // Import our decoupled logic
-import { ImageSlot } from "../AdviceTab.tsx/ImageSlot";
-import { analyzePhysique } from "../AdviceTab.tsx/physiqueAI";
-import { PhotoGuide } from "../AdviceTab.tsx/PhotoGuide";
+import { ImageSlot } from "../AdviceTab/ImageSlot";
+import { analyzePhysique } from "../AdviceTab/physiqueAI";
+import { PhotoGuide } from "../AdviceTab/PhotoGuide";
 
 type PhotoType = "front" | "back";
 
@@ -66,7 +66,8 @@ export default function TabTwoScreen() {
     setLoading(true);
 
     try {
-      const text = await analyzePhysique(images.front, images.back, picApi);
+      // Adjusted the parameter layout to match your reverted service signature
+      const text = await analyzePhysique(images.front, images.back);
 
       if (text.startsWith("REJECTED")) {
         setAiResponse(null);
@@ -115,10 +116,10 @@ export default function TabTwoScreen() {
             <Text style={styles.responseText}>{aiResponse}</Text>
           </View>
         )}
-     <PhotoGuide 
-      isVisible={showGuide} 
-      onToggle={() => setShowGuide(!showGuide)} 
-    />
+        <PhotoGuide
+          isVisible={showGuide}
+          onToggle={() => setShowGuide(!showGuide)}
+        />
         <TouchableOpacity
           style={[
             styles.analyzeButton,

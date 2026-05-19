@@ -9,7 +9,7 @@ import {
   Alert,
 } from 'react-native';
 import DailySchedule from '../workout-tab/workoutSchedule';
-import ProgramScreen, { DEFAULT_PROGRAMS, type Program } from '../workout-tab/programs';
+import ProgramScreen, { MY_PROGRAMS as DEFAULT_PROGRAMS, type Program } from '../workout-tab/programs';
 import ExerciseDetail, { WorkoutExercise, ExerciseSet } from '../workout-tab/ExerciseDetail';
 import {
   loadWorkoutsFromStorage,

@@ -8,7 +8,7 @@ const app = express();
 const upload = multer({ storage: multer.memoryStorage() }); 
 
 // The wildcard model string for free testing
-const MODEL = "openrouter/free";
+const MODEL = "google/gemini-2.5-flash";
 
 app.post('/analyze', upload.fields([{ name: 'front' }, { name: 'back' }]), async (req, res) => {
     try {

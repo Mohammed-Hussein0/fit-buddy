@@ -1,9 +1,7 @@
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 
-// Ensure the path ends with /api/analyze
-// Update this line in your frontend physiqueAI.ts file:
-const BACKEND_URL = "https://fit-buddy-backend.onrender.com/analyze";
-/**
+// Backend URL for physique analysis
+const BACKEND_URL = "https://physique-ai-backend.onrender.com/analyze";/**
  * Compresses an image and returns a clean object format that 
  * both iOS and Android native network bridges understand.
  */
@@ -41,11 +39,14 @@ export const analyzePhysique = async (frontUri: string, backUri: string): Promis
     const response = await fetch(BACKEND_URL, {
       method: 'POST',
       body: formData,
+      headers: {
+        'Accept': 'text/plain',
+      },
     });
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new Error(errorText || "Failed to communicate with backend server.");
+      throw new Error(errorText || `Backend error: ${response.status} ${response.statusText}`);
     }
 
     return await response.text();
