@@ -7,6 +7,7 @@ interface ReactNativeFileValue {
 }
 
 const BACKEND_URL = "https://fit-buddy-backend.onrender.com/api/analyze";
+
 /**
  * Compresses an image and formats it for multipart/form-data upload.
  */
@@ -39,12 +40,10 @@ export const analyzePhysique = async (frontUri: string, backUri: string): Promis
     formData.append('front', frontBlob);
     formData.append('back', backBlob);
 
+    // FIX: Removed the manual headers configuration completely
     const response = await fetch(BACKEND_URL, {
       method: 'POST',
       body: formData,
-      headers: {
-        'Content-Type': 'multipart/form-data',
-      },
     });
 
     if (!response.ok) {
