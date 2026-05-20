@@ -1,6 +1,6 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, Switch, StyleSheet } from 'react-native';
-import Ionicons from '@expo/vector-icons/Ionicons';
+import React from "react";
+import { View, Text, TouchableOpacity, Switch, StyleSheet } from "react-native";
+import Ionicons from "@expo/vector-icons/Ionicons";
 
 export interface SettingsItemProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -11,11 +11,16 @@ export interface SettingsItemProps {
   onSwitch?: (value: boolean) => void;
 }
 
-export const SettingsItem: React.FC<SettingsItemProps> = ({ 
-  icon, label, value, onPress, isSwitch, onSwitch 
+export const SettingsItem: React.FC<SettingsItemProps> = ({
+  icon,
+  label,
+  value,
+  onPress,
+  isSwitch,
+  onSwitch,
 }) => (
-  <TouchableOpacity 
-    style={styles.itemContainer} 
+  <TouchableOpacity
+    style={styles.itemContainer}
     onPress={onPress}
     disabled={isSwitch}
   >
@@ -28,8 +33,8 @@ export const SettingsItem: React.FC<SettingsItemProps> = ({
     <View style={styles.itemRight}>
       {value && <Text style={styles.itemValue}>{value}</Text>}
       {isSwitch ? (
-        <Switch 
-          value={true} 
+        <Switch
+          value={true}
           onValueChange={onSwitch}
           trackColor={{ false: "#e0e0e0", true: "#000" }}
           thumbColor="#fff"
@@ -46,20 +51,38 @@ export const SectionHeader = ({ title }: { title: string }) => (
 );
 
 const styles = StyleSheet.create({
-  sectionHeader: { 
-    fontSize: 13, fontWeight: '600', color: '#666', 
-    marginTop: 24, marginBottom: 8, marginLeft: 20 
+  sectionHeader: {
+    fontSize: 16,
+    fontWeight: "700",
+    color: "#000000",
+    marginTop: 8,
+    marginBottom: 8,
+    paddingHorizontal: 14,
+    letterSpacing: 1.2,
+    textTransform: "uppercase",
   },
-  itemContainer: { 
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', 
-    paddingVertical: 14, paddingHorizontal: 20, borderBottomWidth: 1, borderBottomColor: '#f0f0f0' 
+  itemContainer: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    paddingVertical: 14,
+    paddingHorizontal: 18,
+    backgroundColor: "#fff",
+    borderRadius: 18,
   },
-  itemLeft: { flexDirection: 'row', alignItems: 'center' },
-  iconContainer: { 
-    width: 32, height: 32, borderRadius: 8, backgroundColor: '#f5f5f5', 
-    justifyContent: 'center', alignItems: 'center', marginRight: 12 
+  itemLeft: { flexDirection: "row", alignItems: "center" },
+  iconContainer: {
+    width: 32,
+    height: 38,
+    borderRadius: 12,
+    backgroundColor: "#fff",
+    borderWidth: 1,
+    borderColor: "#d1d1d1",
+    justifyContent: "center",
+    alignItems: "center",
+    marginRight: 14,
   },
-  itemLabel: { fontSize: 16, fontWeight: '500', color: '#000' },
-  itemRight: { flexDirection: 'row', alignItems: 'center' },
-  itemValue: { fontSize: 15, color: '#8e8e93', marginRight: 8 },
+  itemLabel: { fontSize: 15, fontWeight: "600", color: "#111" },
+  itemRight: { flexDirection: "row", alignItems: "center" },
+  itemValue: { fontSize: 15, color: "#111", fontWeight: "700", marginRight: 8 },
 });

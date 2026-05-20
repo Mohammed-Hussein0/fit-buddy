@@ -186,7 +186,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20, paddingBottom: 10, paddingTop: 30, 
     backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f0f0f0' 
   },
-  headerTitle: { fontSize: 24, fontWeight: '700', color: '#000' },
+  headerTitle: { fontSize: 24, fontWeight: '700', color: '#000', paddingVertical:10 },
   backButton: { padding: 4 },
   scrollContent: { paddingBottom: 40 },
   logoutButton: { 

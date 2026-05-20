@@ -1,12 +1,17 @@
-import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { SettingsItem, SectionHeader } from '../components/settings-item';
+import React from "react";
+import { View, StyleSheet } from "react-native";
+import { SettingsItem, SectionHeader } from "../components/settings-item";
 
 // Define the FieldType here or import it from a shared types file
-type FieldType = 'gender'| 'currentWeight' | 'goalWeight' | 'height' | 'nutrition';
+type FieldType =
+  | "gender"
+  | "currentWeight"
+  | "goalWeight"
+  | "height"
+  | "nutrition";
 
 interface GoalsSectionProps {
-  gender: 'Male' | 'Female' | 'Other' | 'Prefer not to say'; // Added Gender
+  gender: "Male" | "Female" | "Other" | "Prefer not to say"; // Added Gender
   height: string;
   currentWeight: string;
   goalWeight: string;
@@ -14,44 +19,51 @@ interface GoalsSectionProps {
   onEdit: (field: FieldType, value: string) => void;
 }
 
-export default function GoalsSection({ 
-  gender,height, currentWeight, goalWeight, nutrition, onEdit 
+export default function GoalsSection({
+  gender,
+  height,
+  currentWeight,
+  goalWeight,
+  nutrition,
+  onEdit,
 }: GoalsSectionProps) {
   return (
-    <View>
-      
-      <SectionHeader title="MY INFO" />
-      <View style={styles.section}>
-        <SettingsItem 
-          icon="resize" 
-          label="Height" 
+    <View style={styles.container}>
+      <View style={styles.card}>
+        <SectionHeader title="MY INFO" />
+        <SettingsItem
+          icon="resize"
+          label="Height"
           value={`${height} cm`}
-          onPress={() => onEdit('height', height)} 
+          onPress={() => onEdit("height", height)}
         />
-        <SettingsItem 
-          icon="body" 
-          label="Current Weight" 
+        <SettingsItem
+          icon="body"
+          label="Current Weight"
           value={`${currentWeight} kg`}
-          onPress={() => onEdit('currentWeight', currentWeight)} 
+          onPress={() => onEdit("currentWeight", currentWeight)}
         />
-        <SettingsItem 
-          icon="person" 
-          label="Gender" 
-          value={gender} 
-          onPress={() => onEdit('gender', gender)} 
+        <SettingsItem
+          icon="person"
+          label="Gender"
+          value={gender}
+          onPress={() => onEdit("gender", gender)}
         />
-      <SectionHeader title="MY GOALS" />
-        <SettingsItem 
-          icon="flag" 
-          label="Goal Weight" 
+      </View>
+
+      <View style={styles.card}>
+        <SectionHeader title="MY GOALS" />
+        <SettingsItem
+          icon="flag"
+          label="Goal Weight"
           value={`${goalWeight} kg`}
-          onPress={() => onEdit('goalWeight', goalWeight)} 
+          onPress={() => onEdit("goalWeight", goalWeight)}
         />
-        <SettingsItem 
-          icon="restaurant" 
-          label="Nutrition Goals" 
+        <SettingsItem
+          icon="restaurant"
+          label="Nutrition Goals"
           value={`${nutrition} kcal`}
-          onPress={() => onEdit('nutrition', nutrition)} 
+          onPress={() => onEdit("nutrition", nutrition)}
         />
       </View>
     </View>
@@ -59,7 +71,20 @@ export default function GoalsSection({
 }
 
 const styles = StyleSheet.create({
-  section: { 
-    backgroundColor: '#fff', borderTopWidth: 1, borderBottomWidth: 1, borderColor: '#e5e5e5' 
+  container: { paddingTop: 24, paddingBottom: 8 },
+  card: {
+    backgroundColor: "#fff",
+    borderRadius: 24,
+    marginHorizontal: 14,
+    paddingVertical: 16,
+    paddingHorizontal: 4,
+    marginBottom: 18,
+    borderWidth: 1,
+    borderColor: "#d1d1d1",
+    shadowColor: "#000",
+    shadowOpacity: 0.04,
+    shadowRadius: 12,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 2,
   },
 });
