@@ -1,4 +1,10 @@
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import React, {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from "react";
 import {
   View,
   StatusBar,
@@ -7,18 +13,28 @@ import {
   UIManager,
   AppState,
   Alert,
-} from 'react-native';
-import DailySchedule from '../workout-tab/workoutSchedule';
-import ProgramScreen, { MY_PROGRAMS as DEFAULT_PROGRAMS, type Program } from '../workout-tab/programs';
-import ExerciseDetail, { WorkoutExercise, ExerciseSet } from '../workout-tab/ExerciseDetail';
+} from "react-native";
+import { useTheme } from "../context/ThemeContext";
+import DailySchedule from "../workout-tab/workoutSchedule";
+import ProgramScreen, {
+  MY_PROGRAMS as DEFAULT_PROGRAMS,
+  type Program,
+} from "../workout-tab/programs";
+import ExerciseDetail, {
+  WorkoutExercise,
+  ExerciseSet,
+} from "../workout-tab/ExerciseDetail";
 import {
   loadWorkoutsFromStorage,
   saveWorkoutsToStorage,
   type WorkoutPersistencePayload,
-} from '../workout-tab/workoutPersistence';
-import { syncToCloud, fetchFromCloud } from '../workout-tab/workoutSync';
+} from "../workout-tab/workoutPersistence";
+import { syncToCloud, fetchFromCloud } from "../workout-tab/workoutSync";
 
-if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+if (
+  Platform.OS === "android" &&
+  UIManager.setLayoutAnimationEnabledExperimental
+) {
   UIManager.setLayoutAnimationEnabledExperimental(true);
 }
 
@@ -35,14 +51,17 @@ function cloneExercises(list: WorkoutExercise[]): WorkoutExercise[] {
 }
 
 export default function WorkoutScreen() {
+  const { colors } = useTheme();
   const [hydrated, setHydrated] = useState(false);
   const [programs, setPrograms] = useState<Program[]>(DEFAULT_PROGRAMS);
-  const [currentProgramId, setCurrentProgramId] = useState('p1');
+  const [currentProgramId, setCurrentProgramId] = useState("p1");
   const [activeProgram, setActiveProgram] = useState<Program | null>(null);
   const [activeWorkout, setActiveWorkout] = useState<Workout | null>(null);
   const [allWorkouts, setAllWorkouts] = useState<Workout[]>([]);
 
-  const [exerciseMap, setExerciseMap] = useState<Record<string, WorkoutExercise[]>>({});
+  const [exerciseMap, setExerciseMap] = useState<
+    Record<string, WorkoutExercise[]>
+  >({});
   const [draftExercises, setDraftExercises] = useState<WorkoutExercise[]>([]);
 
   const stateRef = useRef({
@@ -51,7 +70,7 @@ export default function WorkoutScreen() {
     activeWorkout: null as Workout | null,
     draftExercises: [] as WorkoutExercise[],
     programs: [] as Program[],
-    currentProgramId: 'p1',
+    currentProgramId: "p1",
   });
 
   useEffect(() => {
@@ -63,7 +82,14 @@ export default function WorkoutScreen() {
       programs,
       currentProgramId,
     };
-  }, [allWorkouts, exerciseMap, activeWorkout, draftExercises, programs, currentProgramId]);
+  }, [
+    allWorkouts,
+    exerciseMap,
+    activeWorkout,
+    draftExercises,
+    programs,
+    currentProgramId,
+  ]);
 
   const exerciseDraftDirty = useMemo(() => {
     if (!activeWorkout) return false;
@@ -110,8 +136,8 @@ export default function WorkoutScreen() {
 
   // AppState: background safety flush; foreground cloud pull
   useEffect(() => {
-    const sub = AppState.addEventListener('change', (next) => {
-      if (next === 'background') {
+    const sub = AppState.addEventListener("change", (next) => {
+      if (next === "background") {
         const {
           allWorkouts: w,
           exerciseMap: em,
@@ -135,7 +161,7 @@ export default function WorkoutScreen() {
         setExerciseMap(merged);
         return;
       }
-      if (next !== 'active') return;
+      if (next !== "active") return;
       void (async () => {
         try {
           const remote = await fetchFromCloud();
@@ -143,7 +169,8 @@ export default function WorkoutScreen() {
           setAllWorkouts(remote.workouts);
           setExerciseMap(remote.exerciseMap);
           if (remote.programs?.length) setPrograms(remote.programs);
-          if (remote.currentProgramId) setCurrentProgramId(remote.currentProgramId);
+          if (remote.currentProgramId)
+            setCurrentProgramId(remote.currentProgramId);
           await saveWorkoutsToStorage(remote);
           const { activeWorkout: aw } = stateRef.current;
           if (aw) {
@@ -170,10 +197,15 @@ export default function WorkoutScreen() {
   const addWorkoutToGlobal = (newWorkout: any) => {
     if (!activeProgram) return;
     const dup = allWorkouts.some(
-      (w) => w.programId === activeProgram.id && w.dayOfWeek === newWorkout.dayOfWeek
+      (w) =>
+        w.programId === activeProgram.id &&
+        w.dayOfWeek === newWorkout.dayOfWeek,
     );
     if (dup) {
-      Alert.alert('Day taken', 'This program already has a workout on that day.');
+      Alert.alert(
+        "Day taken",
+        "This program already has a workout on that day.",
+      );
       return;
     }
     const workoutWithId = { ...newWorkout, programId: activeProgram.id };
@@ -198,7 +230,11 @@ export default function WorkoutScreen() {
   const handleSaveExercises = useCallback(async () => {
     const aw = stateRef.current.activeWorkout;
     if (!aw) return;
-    const { allWorkouts: w, exerciseMap: em, draftExercises: d } = stateRef.current;
+    const {
+      allWorkouts: w,
+      exerciseMap: em,
+      draftExercises: d,
+    } = stateRef.current;
     const nextMap = { ...em, [aw.id]: cloneExercises(d) };
     setExerciseMap(nextMap);
     const { programs: pr, currentProgramId: cpid } = stateRef.current;
@@ -231,31 +267,39 @@ export default function WorkoutScreen() {
       setActiveWorkout(null);
       return;
     }
-    Alert.alert('Unsaved changes', 'Save your edits, or discard them and go back.', [
-      { text: 'Cancel', style: 'cancel' },
-      {
-        text: 'Discard',
-        style: 'destructive',
-        onPress: () => {
-          handleDiscardExercises();
-          LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
-          setActiveWorkout(null);
-        },
-      },
-      {
-        text: 'Save',
-        onPress: () => {
-          void (async () => {
-            await handleSaveExercises();
-            LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    Alert.alert(
+      "Unsaved changes",
+      "Save your edits, or discard them and go back.",
+      [
+        { text: "Cancel", style: "cancel" },
+        {
+          text: "Discard",
+          style: "destructive",
+          onPress: () => {
+            handleDiscardExercises();
+            LayoutAnimation.configureNext(
+              LayoutAnimation.Presets.easeInEaseOut,
+            );
             setActiveWorkout(null);
-          })();
+          },
         },
-      },
-    ]);
+        {
+          text: "Save",
+          onPress: () => {
+            void (async () => {
+              await handleSaveExercises();
+              LayoutAnimation.configureNext(
+                LayoutAnimation.Presets.easeInEaseOut,
+              );
+              setActiveWorkout(null);
+            })();
+          },
+        },
+      ],
+    );
   };
 
-  const handleDraftAddExercise = (ex: Omit<WorkoutExercise, 'sets'>) => {
+  const handleDraftAddExercise = (ex: Omit<WorkoutExercise, "sets">) => {
     setDraftExercises((prev) => [...prev, { ...ex, sets: [] }]);
   };
 
@@ -265,33 +309,39 @@ export default function WorkoutScreen() {
         if (ex.id !== exerciseId) return ex;
         const newSet: ExerciseSet = {
           id: `set-${Date.now()}-${Math.random()}`,
-          reps: '',
-          weight: '',
+          reps: "",
+          weight: "",
           rpe: 0,
         };
         return { ...ex, sets: [...ex.sets, newSet] };
-      })
+      }),
     );
   };
 
   const handleDraftUpdateSet = (
     exerciseId: string,
     setId: string,
-    field: 'reps' | 'weight',
-    value: string
+    field: "reps" | "weight",
+    value: string,
   ) => {
     setDraftExercises((prev) =>
       prev.map((ex) => {
         if (ex.id !== exerciseId) return ex;
         return {
           ...ex,
-          sets: ex.sets.map((s) => (s.id === setId ? { ...s, [field]: value } : s)),
+          sets: ex.sets.map((s) =>
+            s.id === setId ? { ...s, [field]: value } : s,
+          ),
         };
-      })
+      }),
     );
   };
 
-  const handleDraftUpdateSetRpe = (exerciseId: string, setId: string, rpe: number) => {
+  const handleDraftUpdateSetRpe = (
+    exerciseId: string,
+    setId: string,
+    rpe: number,
+  ) => {
     setDraftExercises((prev) =>
       prev.map((ex) => {
         if (ex.id !== exerciseId) return ex;
@@ -299,7 +349,7 @@ export default function WorkoutScreen() {
           ...ex,
           sets: ex.sets.map((s) => (s.id === setId ? { ...s, rpe } : s)),
         };
-      })
+      }),
     );
   };
 
@@ -308,7 +358,7 @@ export default function WorkoutScreen() {
       prev.map((ex) => {
         if (ex.id !== exerciseId) return ex;
         return { ...ex, sets: ex.sets.filter((s) => s.id !== setId) };
-      })
+      }),
     );
   };
 
@@ -317,8 +367,8 @@ export default function WorkoutScreen() {
   };
 
   return (
-    <View style={{ flex: 1, backgroundColor: '#F8F8F8' }}>
-      <StatusBar barStyle="dark-content" />
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <StatusBar barStyle={colors.statusBarStyle} />
 
       {activeWorkout ? (
         <ExerciseDetail
@@ -332,7 +382,9 @@ export default function WorkoutScreen() {
           onUpdateSet={(exId, setId, field, value) =>
             handleDraftUpdateSet(exId, setId, field, value)
           }
-          onUpdateSetRpe={(exId, setId, rpe) => handleDraftUpdateSetRpe(exId, setId, rpe)}
+          onUpdateSetRpe={(exId, setId, rpe) =>
+            handleDraftUpdateSetRpe(exId, setId, rpe)
+          }
           onDeleteSet={(exId, setId) => handleDraftDeleteSet(exId, setId)}
           onDeleteExercise={handleDraftDeleteExercise}
         />

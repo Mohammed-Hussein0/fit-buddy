@@ -1,20 +1,26 @@
-import React, { useState } from 'react';
-import { 
-  View, Text, StyleSheet, ScrollView, TouchableOpacity, 
-  SafeAreaView, Alert,
-} from 'react-native';
-import { Stack, useRouter } from 'expo-router';
-import { supabase } from '@/supabase';
-import Ionicons from '@expo/vector-icons/Ionicons';
-import { UserProfile,useUser } from './context/UserInfo';
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  StyleSheet,
+  ScrollView,
+  TouchableOpacity,
+  SafeAreaView,
+  Alert,
+} from "react-native";
+import { Stack, useRouter } from "expo-router";
+import { supabase } from "@/supabase";
+import Ionicons from "@expo/vector-icons/Ionicons";
+import { UserProfile, useUser } from "./context/UserInfo";
+import { useTheme } from "./context/ThemeContext";
 // Your custom components
-import GoalsSection from './settings-tab/goals-section';
-import AppPreferences from './settings-tab/preferences-section';
-import SupportSection from './settings-tab/support-section';
-import SettingsEditModal from './settings-tab/modal';
+import GoalsSection from "./settings-tab/goals-section";
+import AppPreferences from "./settings-tab/preferences-section";
+import SupportSection from "./settings-tab/support-section";
+import SettingsEditModal from "./settings-tab/modal";
 
 // Your Global Context
- // Check this path matches your structure!
+// Check this path matches your structure!
 
 // Enable Animation on Android
 
@@ -44,7 +50,10 @@ export function useSettings() {
 
   const saveEdit = async () => {
     // If it's gender, we don't need to parse float
-    if (editingField === 'gender' && tempValue === "Male" || tempValue === "Female") {
+    if (
+      (editingField === "gender" && tempValue === "Male") ||
+      tempValue === "Female"
+    ) {
       await updateProfile({ gender: tempValue });
       closeEditModal();
       return;
@@ -53,22 +62,22 @@ export function useSettings() {
     const val = parseFloat(tempValue);
 
     // Validation
-    if (editingField === 'height') {
+    if (editingField === "height") {
       if (isNaN(val) || val < 50 || val > 250) {
         Alert.alert("Invalid Height", "Please enter a valid height in cm.");
-        return; 
+        return;
       }
     }
-    if (editingField === 'currentWeight') {
+    if (editingField === "currentWeight") {
       if (isNaN(val) || val < 30 || val > 200) {
         Alert.alert("Invalid Weight", "Please enter a valid weight in kg.");
-        return; 
+        return;
       }
     }
-     if (editingField === 'goalWeight') {
+    if (editingField === "goalWeight") {
       if (isNaN(val) || val < 40 || val > 150) {
         Alert.alert("Invalid Weight", "Please enter a valid weight in kg.");
-        return; 
+        return;
       }
     }
 
@@ -76,7 +85,7 @@ export function useSettings() {
     if (editingField) {
       await updateProfile({ [editingField]: tempValue });
     }
-    
+
     closeEditModal();
   };
 
@@ -108,18 +117,19 @@ export function useSettings() {
 // ==========================================
 export default function SettingsScreen() {
   const router = useRouter();
-  
+  const { colors } = useTheme();
+
   // Use the hook above to get data and functions
-  const { 
-    profile, 
-    modalVisible, 
-    editingField, 
-    tempValue, 
-    setTempValue, 
-    openEditModal, 
-    closeEditModal, 
-    saveEdit, 
-    getSuggestedRange 
+  const {
+    profile,
+    modalVisible,
+    editingField,
+    tempValue,
+    setTempValue,
+    openEditModal,
+    closeEditModal,
+    saveEdit,
+    getSuggestedRange,
   } = useSettings();
 
   const handleLogout = async () => {
@@ -130,21 +140,32 @@ export default function SettingsScreen() {
   const { min: suggestMin, max: suggestMax } = getSuggestedRange();
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView
+      style={[styles.container, { backgroundColor: colors.background }]}
+    >
       <Stack.Screen options={{ headerShown: false }} />
-      
+
       {/* Header */}
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-          <Ionicons name="arrow-back" size={24} color="#000" />
+      <View
+        style={[
+          styles.header,
+          { backgroundColor: colors.surface, borderBottomColor: colors.border },
+        ]}
+      >
+        <TouchableOpacity
+          onPress={() => router.back()}
+          style={styles.backButton}
+        >
+          <Ionicons name="arrow-back" size={24} color={colors.icon} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>Settings</Text>
+        <Text style={[styles.headerTitle, { color: colors.text }]}>
+          Settings
+        </Text>
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        
         {/* Sections */}
-        <GoalsSection 
+        <GoalsSection
           gender={profile.gender} // Pass Gender
           height={profile.height}
           currentWeight={profile.currentWeight}
@@ -157,11 +178,19 @@ export default function SettingsScreen() {
 
         <SupportSection />
 
-        <TouchableOpacity style={styles.logoutButton} onPress={handleLogout}>
+        <TouchableOpacity
+          style={[
+            styles.logoutButton,
+            { backgroundColor: colors.surface, borderColor: colors.border },
+          ]}
+          onPress={handleLogout}
+        >
           <Text style={styles.logoutText}>Log Out</Text>
         </TouchableOpacity>
 
-        <Text style={styles.versionText}>Version 1.0.9 • Build 2024</Text>
+        <Text style={[styles.versionText, { color: colors.secondaryText }]}>
+          Version 1.0.9 • Build 2024
+        </Text>
       </ScrollView>
 
       <SettingsEditModal
@@ -174,26 +203,45 @@ export default function SettingsScreen() {
         onClose={closeEditModal}
         onSave={saveEdit}
       />
-
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#f6f6f6' },
-  header: { 
-    flexDirection: 'row', alignItems: 'center', gap: 15, 
-    paddingHorizontal: 20, paddingBottom: 10, paddingTop: 30, 
-    backgroundColor: '#fff', borderBottomWidth: 1, borderBottomColor: '#f0f0f0' 
+  container: { flex: 1, backgroundColor: "#f6f6f6" },
+  header: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 15,
+    paddingHorizontal: 20,
+    paddingBottom: 10,
+    paddingTop: 30,
+    backgroundColor: "#fff",
+    borderBottomWidth: 1,
+    borderBottomColor: "#f0f0f0",
   },
-  headerTitle: { fontSize: 24, fontWeight: '700', color: '#000', paddingVertical:10 },
+  headerTitle: {
+    fontSize: 24,
+    fontWeight: "700",
+    color: "#000",
+    paddingVertical: 10,
+  },
   backButton: { padding: 4 },
   scrollContent: { paddingBottom: 40 },
-  logoutButton: { 
-    marginTop: 30, backgroundColor: '#fff', paddingVertical: 16, 
-    borderTopWidth: 1, borderBottomWidth: 1, borderColor: '#e5e5e5', alignItems: 'center' 
+  logoutButton: {
+    marginTop: 30,
+    backgroundColor: "#fff",
+    paddingVertical: 16,
+    borderTopWidth: 1,
+    borderBottomWidth: 1,
+    borderColor: "#e5e5e5",
+    alignItems: "center",
   },
-  logoutText: { fontSize: 16, fontWeight: '600', color: '#ff3b30' },
-  versionText: { textAlign: 'center', marginTop: 20, color: '#999', fontSize: 12 },
-  
+  logoutText: { fontSize: 16, fontWeight: "600", color: "#ff3b30" },
+  versionText: {
+    textAlign: "center",
+    marginTop: 20,
+    color: "#999",
+    fontSize: 12,
+  },
 });

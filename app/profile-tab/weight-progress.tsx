@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Dimensions,
 } from "react-native";
+import { useTheme } from "../context/ThemeContext";
 import Svg, { Path, Circle, Line, Rect } from "react-native-svg";
 
 const weightHistory = [
@@ -47,6 +48,7 @@ const defaultPeriodIndex = 2;
 
 export default function WeightChart() {
   const { width } = Dimensions.get("window");
+  const { colors } = useTheme();
   const chartWidth = Math.max(260, width - 96);
   const chartHeight = 210;
   const [periodIndex, setPeriodIndex] = useState(defaultPeriodIndex);
@@ -107,7 +109,9 @@ export default function WeightChart() {
   return (
     <View style={styles.sectionContainer}>
       <View style={styles.sectionHeaderRow}>
-        <Text style={styles.sectionTitle}>PROGRESS</Text>
+        <Text style={[styles.sectionTitle, { color: colors.text }]}>
+          PROGRESS
+        </Text>
       </View>
 
       <View style={styles.periodRow}>
@@ -116,7 +120,10 @@ export default function WeightChart() {
             key={option.key}
             style={[
               styles.periodButton,
-              selectedPeriod.key === option.key && styles.periodButtonActive,
+              { backgroundColor: colors.surface },
+              selectedPeriod.key === option.key && {
+                backgroundColor: colors.text,
+              },
             ]}
             onPress={() =>
               setPeriodIndex(
@@ -127,8 +134,8 @@ export default function WeightChart() {
             <Text
               style={
                 selectedPeriod.key === option.key
-                  ? styles.periodTextActive
-                  : styles.periodText
+                  ? [styles.periodTextActive, { color: colors.surface }]
+                  : [styles.periodText, { color: colors.secondaryText }]
               }
             >
               {option.label}
@@ -137,10 +144,18 @@ export default function WeightChart() {
         ))}
       </View>
 
-      <View style={styles.chartWrapper}>
+      <View
+        style={[
+          styles.chartWrapper,
+          { backgroundColor: colors.surface, borderColor: colors.border },
+        ]}
+      >
         <View style={styles.yAxisLabels}>
           {yLabels.map((value) => (
-            <Text key={value.toFixed(1)} style={styles.yLabel}>
+            <Text
+              key={value.toFixed(1)}
+              style={[styles.yLabel, { color: colors.secondaryText }]}
+            >
               {value.toFixed(1)}
             </Text>
           ))}
@@ -154,7 +169,7 @@ export default function WeightChart() {
               width={chartWidth}
               height={chartHeight}
               rx={16}
-              fill="#fff"
+              fill={colors.surface}
             />
             {yLabels.map((value, index) => {
               const y = (chartInnerHeight / 4) * index + 10;
@@ -165,7 +180,7 @@ export default function WeightChart() {
                   y1={y}
                   x2={chartWidth - 6}
                   y2={y}
-                  stroke="#e8e8e8"
+                  stroke={colors.border}
                   strokeWidth={1}
                 />
               );
@@ -201,7 +216,7 @@ export default function WeightChart() {
             {xLabels.map((label, index) => (
               <Text
                 key={`${label}-${index}`}
-                style={styles.xLabel}
+                style={[styles.xLabel, { color: colors.secondaryText }]}
                 numberOfLines={1}
               >
                 {label}

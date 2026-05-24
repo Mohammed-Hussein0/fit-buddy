@@ -1,10 +1,7 @@
 import { manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 
 // Backend URL for physique analysis
-const BACKEND_URL = "https://physique-ai-backend.onrender.com/analyze";/**
- * Compresses an image and returns a clean object format that 
- * both iOS and Android native network bridges understand.
- */
+const BACKEND_URL = "http://192.168.8.43:8000/api/analysis/analyze";
 const prepareImage = async (uri: string, filename: string) => {
   const manipulated = await manipulateAsync(
     uri,

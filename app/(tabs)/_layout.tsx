@@ -1,22 +1,21 @@
 import React from "react";
 import { Tabs } from "expo-router";
 import Ionicons from "@expo/vector-icons/Ionicons";
-import { useColorScheme } from "@/hooks/use-color-scheme";
+import { useTheme } from "../context/ThemeContext";
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
+  const { colors } = useTheme();
 
   return (
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: "#ff0000",
-        tabBarInactiveTintColor: "#746c6c",
-        // 1. STYLE THE TAB BAR HERE
+        tabBarInactiveTintColor: colors.secondaryText,
         tabBarStyle: {
-          backgroundColor: "#ffffff", // Dark background (matches your white/red icons)
-          borderTopWidth: 0, // Remove the flat line at the top
+          backgroundColor: colors.surface,
+          borderTopWidth: 0,
           height: 75,
-          paddingTop: 10, // A bit taller to accommodate the curves
+          paddingTop: 10,
           paddingBottom: 10,
         },
       }}

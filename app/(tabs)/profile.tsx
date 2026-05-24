@@ -1,12 +1,12 @@
 import React from "react";
 import {
-  Text,
   View,
   ScrollView,
   StyleSheet,
   StatusBar,
-  ActivityIndicator
+  ActivityIndicator,
 } from "react-native";
+import { useTheme } from "../context/ThemeContext";
 import Statsbar from "../profile-tab/stats-bar";
 import WeightChart from "../profile-tab/weight-progress";
 import QuoteCard from "../profile-tab/quote-card";
@@ -17,60 +17,61 @@ import { useAuth } from "../context/auth";
 import { useUser } from "../context/UserInfo";
 
 export default function ProfileTab() {
+  const { colors } = useTheme();
+
   // 1. Get Auth User (for email/metadata) and Profile Data (for weight/height)
-  const { user } = useAuth(); 
-  const { profile, loading } = useUser(); 
+  const { user } = useAuth();
+  const { profile, loading } = useUser();
 
   if (loading || !user) {
     return (
       <View style={styles.center}>
-        <ActivityIndicator size="large" color="#000" />
+        <ActivityIndicator size="large" color={colors.icon} />
       </View>
     );
   }
 
   // 2. Format the real join date from Supabase
-  const joinDate = new Date(user.created_at).toLocaleDateString('en-US', {
-    month: 'long',
-    year: 'numeric'
+  const joinDate = new Date(user.created_at).toLocaleDateString("en-US", {
+    month: "long",
+    year: "numeric",
   });
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-      <StatusBar barStyle="dark-content" />
+    <ScrollView
+      style={[styles.container, { backgroundColor: colors.background }]}
+      showsVerticalScrollIndicator={false}
+    >
+      <StatusBar barStyle={colors.statusBarStyle} />
 
       {/* --- HEADER SECTION --- */}
       <View style={styles.header}>
-
-        <ProfileInfo 
-          username={user.user_metadata?.username || 'User'}
-          email={user.email || ''}
+        <ProfileInfo
+          username={user.user_metadata?.username || "User"}
+          email={user.email || ""}
           joinDate={joinDate} // <--- Now uses real date
         />
 
         {/* --- QUICK STATS GRID --- */}
-        <Statsbar 
+        <Statsbar
           // 3. Connect the LIVE weight from your settings!
-          weight={profile.currentWeight} 
-          
+          weight={profile.currentWeight}
           // These are placeholders for now until we build the workout tracker
-          workouts="12" 
-          streak="5"   
+          workouts="12"
+          streak="5"
         />
 
         <ProfileStepsSection embedded />
-
       </View>
 
       {/* --- CHART SECTION --- */}
-      <WeightChart/>
+      <WeightChart />
 
       {/* --- DAILY HABITS --- */}
-      <DailyHabits/>
+      <DailyHabits />
 
       {/* --- QUOTE CARD --- */}
-      <QuoteCard/>
-      
+      <QuoteCard />
     </ScrollView>
   );
 }
@@ -85,5 +86,5 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingBottom: 20,
   },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center' },
+  center: { flex: 1, justifyContent: "center", alignItems: "center" },
 });

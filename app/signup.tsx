@@ -1,35 +1,37 @@
-import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  Alert, 
+import React, { useState } from "react";
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  Alert,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
-  ScrollView
-} from 'react-native';
-import { supabase } from '../supabase'; 
-import { useRouter } from 'expo-router';
-import { Stack } from 'expo-router';
+  ScrollView,
+} from "react-native";
+import { supabase } from "../supabase";
+import { useRouter } from "expo-router";
+import { Stack } from "expo-router";
+import { useTheme } from "./context/ThemeContext";
 
 export default function SignUpScreen() {
   const router = useRouter();
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [username, setUsername] = useState('');
+  const { colors } = useTheme();
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
 
   async function signUpWithEmail() {
     if (!email || !password || !username) {
-        Alert.alert('Error', 'Please fill in all fields');
-        return;
+      Alert.alert("Error", "Please fill in all fields");
+      return;
     }
 
     setLoading(true);
-    
+
     // 1. Create user in Supabase Auth
     const { data, error } = await supabase.auth.signUp({
       email: email,
@@ -37,7 +39,7 @@ export default function SignUpScreen() {
       options: {
         // 2. Store the username in the user's metadata immediately
         data: {
-          username: username, 
+          username: username,
         },
       },
     });
@@ -47,7 +49,10 @@ export default function SignUpScreen() {
     } else {
       // 3. Success!
       if (!data.session) {
-        Alert.alert("Success", "Please check your inbox for email verification!");
+        Alert.alert(
+          "Success",
+          "Please check your inbox for email verification!",
+        );
       }
       // If auto-confirm is on, the _layout.tsx listener handles the redirect.
     }
@@ -55,54 +60,81 @@ export default function SignUpScreen() {
   }
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       behavior={Platform.OS === "ios" ? "padding" : "height"}
-      style={styles.container}
+      style={[styles.container, { backgroundColor: colors.background }]}
     >
       <Stack.Screen options={{ headerShown: false }} />
-      
+
       <ScrollView contentContainerStyle={styles.scrollContent}>
         <View style={styles.headerContainer}>
-          <Text style={styles.headerTitle}>Create Account</Text>
-          <Text style={styles.headerSubtitle}>Join us and start your journey</Text>
+          <Text style={[styles.headerTitle, { color: colors.text }]}>
+            Create Account
+          </Text>
+          <Text
+            style={[styles.headerSubtitle, { color: colors.secondaryText }]}
+          >
+            Join us and start your journey
+          </Text>
         </View>
 
         <View style={styles.inputContainer}>
-          <Text style={styles.label}>USERNAME</Text>
+          <Text style={[styles.label, { color: colors.text }]}>USERNAME</Text>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              {
+                borderColor: colors.border,
+                color: colors.text,
+                backgroundColor: colors.surface,
+              },
+            ]}
             onChangeText={setUsername}
             value={username}
             placeholder="johndoe"
-            placeholderTextColor="#999"
+            placeholderTextColor={colors.secondaryText}
             autoCapitalize="none"
           />
 
-          <Text style={styles.label}>EMAIL</Text>
+          <Text style={[styles.label, { color: colors.text }]}>EMAIL</Text>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              {
+                borderColor: colors.border,
+                color: colors.text,
+                backgroundColor: colors.surface,
+              },
+            ]}
             onChangeText={setEmail}
             value={email}
             placeholder="name@example.com"
-            placeholderTextColor="#999"
+            placeholderTextColor={colors.secondaryText}
             autoCapitalize="none"
             keyboardType="email-address"
           />
 
-          <Text style={styles.label}>PASSWORD</Text>
+          <Text style={[styles.label, { color: colors.text }]}>PASSWORD</Text>
           <TextInput
-            style={styles.input}
+            style={[
+              styles.input,
+              {
+                borderColor: colors.border,
+                color: colors.text,
+                backgroundColor: colors.surface,
+              },
+            ]}
             onChangeText={setPassword}
             value={password}
             secureTextEntry={true}
             placeholder="Create a password"
-            placeholderTextColor="#999"
+            placeholderTextColor={colors.secondaryText}
           />
         </View>
 
-        <TouchableOpacity 
-          style={styles.button} 
-          onPress={signUpWithEmail} 
+        <TouchableOpacity
+          style={styles.button}
+          onPress={signUpWithEmail}
           disabled={loading}
         >
           {loading ? (
@@ -112,11 +144,18 @@ export default function SignUpScreen() {
           )}
         </TouchableOpacity>
 
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.secondaryButton}
-          onPress={() => router.push('/login')}
+          onPress={() => router.push("/login")}
         >
-          <Text style={styles.secondaryButtonText}>Already have an account? Log In</Text>
+          <Text
+            style={[
+              styles.secondaryButtonText,
+              { color: colors.secondaryText },
+            ]}
+          >
+            Already have an account? Log In
+          </Text>
         </TouchableOpacity>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -126,11 +165,11 @@ export default function SignUpScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: '#fff',
+    backgroundColor: "#fff",
   },
   scrollContent: {
     flexGrow: 1,
-    justifyContent: 'center',
+    justifyContent: "center",
     paddingHorizontal: 24,
     paddingVertical: 40,
   },
@@ -139,22 +178,22 @@ const styles = StyleSheet.create({
   },
   headerTitle: {
     fontSize: 32,
-    fontWeight: '800',
-    color: '#000',
+    fontWeight: "800",
+    color: "#000",
     marginBottom: 8,
   },
   headerSubtitle: {
     fontSize: 16,
-    color: '#666',
-    fontWeight: '500',
+    color: "#666",
+    fontWeight: "500",
   },
   inputContainer: {
     marginBottom: 30,
   },
   label: {
     fontSize: 12,
-    fontWeight: '700',
-    color: '#000',
+    fontWeight: "700",
+    color: "#000",
     marginBottom: 8,
     marginTop: 20,
     letterSpacing: 1,
@@ -162,19 +201,19 @@ const styles = StyleSheet.create({
   input: {
     height: 50,
     borderWidth: 1,
-    borderColor: '#e0e0e0',
+    borderColor: "#e0e0e0",
     borderRadius: 8,
     paddingHorizontal: 16,
     fontSize: 16,
-    color: '#000',
-    backgroundColor: '#f9f9f9',
+    color: "#000",
+    backgroundColor: "#f9f9f9",
   },
   button: {
-    backgroundColor: '#000',
+    backgroundColor: "#000",
     height: 56,
     borderRadius: 28,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     marginBottom: 20,
     shadowColor: "#000",
     shadowOffset: { width: 0, height: 4 },
@@ -183,17 +222,17 @@ const styles = StyleSheet.create({
     elevation: 8,
   },
   buttonText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 16,
-    fontWeight: '700',
+    fontWeight: "700",
   },
   secondaryButton: {
-    alignItems: 'center',
+    alignItems: "center",
     padding: 10,
   },
   secondaryButtonText: {
-    color: '#666',
+    color: "#666",
     fontSize: 14,
-    fontWeight: '600',
+    fontWeight: "600",
   },
 });

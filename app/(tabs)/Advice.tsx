@@ -1,7 +1,7 @@
-import { picApi } from "@/supabase";
 import { Ionicons } from "@expo/vector-icons";
 import * as ImagePicker from "expo-image-picker";
 import React, { useState } from "react";
+import { useTheme } from "../context/ThemeContext";
 import {
   ActivityIndicator,
   Alert,
@@ -22,6 +22,7 @@ import { PhotoGuide } from "../AdviceTab/PhotoGuide";
 type PhotoType = "front" | "back";
 
 export default function TabTwoScreen() {
+  const { colors } = useTheme();
   const [images, setImages] = useState<{
     front: string | null;
     back: string | null;
@@ -86,10 +87,17 @@ export default function TabTwoScreen() {
   const isReadyForAI = images.front && images.back;
 
   return (
-    <View style={styles.screenContainer}>
-      <ScrollView style={styles.container} showsVerticalScrollIndicator={false}>
-        <Text style={styles.header}>Physique Advisor</Text>
-        <Text style={styles.subtitle}>
+    <View
+      style={[styles.screenContainer, { backgroundColor: colors.background }]}
+    >
+      <ScrollView
+        style={[styles.container, { backgroundColor: colors.background }]}
+        showsVerticalScrollIndicator={false}
+      >
+        <Text style={[styles.header, { color: colors.text }]}>
+          Physique Advisor
+        </Text>
+        <Text style={[styles.subtitle, { color: colors.secondaryText }]}>
           Stateless AI Analysis • Photos are not stored.
         </Text>
 
@@ -111,9 +119,58 @@ export default function TabTwoScreen() {
         </View>
 
         {aiResponse && (
-          <View style={styles.responseCard}>
-            <Text style={styles.responseHeader}>AI Feedback:</Text>
-            <Text style={styles.responseText}>{aiResponse}</Text>
+          <View
+            style={[
+              styles.responseCard,
+              {
+                backgroundColor: colors.surface,
+                borderLeftColor: colors.icon,
+                shadowColor: colors.text,
+              },
+            ]}
+          >
+            <View style={styles.responseHeaderContainer}>
+              <Text style={[styles.responseHeader, { color: colors.text }]}>
+                AI Feedback:
+              </Text>
+              <TouchableOpacity
+                onPress={() => setAiResponse(null)}
+                hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+              >
+                <Ionicons name="close" size={20} color={colors.secondaryText} />
+              </TouchableOpacity>
+            </View>
+            <Text style={[styles.responseText, { color: colors.text }]}>
+              {aiResponse}
+            </Text>
+            <View style={styles.responseButtonsContainer}>
+              <TouchableOpacity
+                style={[
+                  styles.responseButton,
+                  { backgroundColor: colors.border },
+                ]}
+                onPress={() => setImages({ front: null, back: null })}
+              >
+                <Text
+                  style={[styles.responseButtonText, { color: colors.text }]}
+                >
+                  Clear Photos
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[
+                  styles.responseButton,
+                  { backgroundColor: colors.border },
+                ]}
+                onPress={() => setAiResponse(null)}
+              >
+                <Text
+                  style={[styles.responseButtonText, { color: colors.text }]}
+                >
+                  Dismiss
+                </Text>
+              </TouchableOpacity>
+            </View>
           </View>
         )}
         <PhotoGuide
@@ -123,7 +180,10 @@ export default function TabTwoScreen() {
         <TouchableOpacity
           style={[
             styles.analyzeButton,
-            (!isReadyForAI || loading) && styles.disabledButton,
+            (!isReadyForAI || loading) && [
+              styles.disabledButton,
+              { backgroundColor: colors.border },
+            ],
           ]}
           disabled={!isReadyForAI || loading}
           onPress={runAnalysis}
@@ -142,22 +202,36 @@ export default function TabTwoScreen() {
           <TouchableWithoutFeedback onPress={() => setActiveSlot(null)}>
             <View style={styles.overlay}>
               <View style={styles.menuCard}>
-                <Text style={styles.menuTitle}>Upload {activeSlot} photo</Text>
+                <Text
+                  style={[styles.menuTitle, { color: colors.secondaryText }]}
+                >
+                  Upload {activeSlot} photo
+                </Text>
 
                 <TouchableOpacity
-                  style={styles.menuOption}
+                  style={[
+                    styles.menuOption,
+                    { borderBottomColor: colors.border },
+                  ]}
                   onPress={() => handlePickImage(true)}
                 >
                   <Ionicons name="camera-outline" size={24} color="#fff" />
-                  <Text style={styles.menuOptionText}>Take New Photo</Text>
+                  <Text style={[styles.menuOptionText, { color: "white" }]}>
+                    Take New Photo
+                  </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
-                  style={styles.menuOption}
+                  style={[
+                    styles.menuOption,
+                    { borderBottomColor: colors.border },
+                  ]}
                   onPress={() => handlePickImage(false)}
                 >
                   <Ionicons name="images-outline" size={24} color="#fff" />
-                  <Text style={styles.menuOptionText}>Choose from Gallery</Text>
+                  <Text style={[styles.menuOptionText, { color: "white" }]}>
+                    Choose from Gallery
+                  </Text>
                 </TouchableOpacity>
 
                 <TouchableOpacity
@@ -203,9 +277,14 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.05,
     shadowRadius: 5,
   },
+  responseHeaderContainer: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    marginBottom: 12,
+  },
   responseHeader: {
     fontWeight: "900",
-    marginBottom: 8,
     fontSize: 15,
     textTransform: "uppercase",
     letterSpacing: 0.5,
@@ -213,8 +292,24 @@ const styles = StyleSheet.create({
   responseText: {
     fontSize: 15,
     lineHeight: 22,
-    color: "#333",
     fontWeight: "500",
+    marginBottom: 16,
+  },
+  responseButtonsContainer: {
+    flexDirection: "row",
+    gap: 10,
+    marginTop: 12,
+  },
+  responseButton: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 12,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  responseButtonText: {
+    fontSize: 13,
+    fontWeight: "600",
   },
 
   analyzeButton: {

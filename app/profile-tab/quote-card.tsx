@@ -1,18 +1,21 @@
-import React from 'react';
-import { View,Text, StyleSheet } from 'react-native';
+import React from "react";
+import { View, Text, StyleSheet } from "react-native";
+import { useTheme } from "../context/ThemeContext";
 
 export default function QuoteCard() {
-    return (
-      <View style={styles.quoteContainer}>
-            <Text style={styles.quoteText}>
-              &quot;The only bad workout is the one that did not happen.&quot;
-            </Text>
-          </View>
-        );
+  const { colors } = useTheme();
+
+  return (
+    <View style={[styles.quoteContainer, { backgroundColor: colors.surface }]}>
+      <Text style={[styles.quoteText, { color: colors.text }]}>
+        &quot;The only bad workout is the one that did not happen.&quot;
+      </Text>
+    </View>
+  );
 }
 const styles = StyleSheet.create({
   quoteContainer: {
-    marginVertical:30,
+    marginVertical: 30,
     marginHorizontal: 20,
     backgroundColor: "#000",
     borderRadius: 20,
@@ -27,4 +30,4 @@ const styles = StyleSheet.create({
     fontStyle: "italic",
     lineHeight: 26,
   },
-})
+});

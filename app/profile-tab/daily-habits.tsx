@@ -1,4 +1,4 @@
-import React, { useState, useCallback } from "react";
+import React, { useState } from "react";
 import Ionicons from "@expo/vector-icons/Ionicons";
 import {
   View,
@@ -9,12 +9,13 @@ import {
   ScrollView,
   Platform,
 } from "react-native";
+import { useTheme } from "../context/ThemeContext";
 // CRITICAL: GestureHandlerRootView must wrap the component for swipes to work
-import { GestureHandlerRootView, Swipeable } from "react-native-gesture-handler";
-import Animated, { 
-  FadeInRight, 
-  Layout, 
-} from "react-native-reanimated";
+import {
+  GestureHandlerRootView,
+  Swipeable,
+} from "react-native-gesture-handler";
+import Animated, { FadeInRight, Layout } from "react-native-reanimated";
 
 // --- TYPES & DATA ---
 interface Habit {
@@ -36,16 +37,27 @@ const AVAILABLE_HABITS = [
 ];
 
 export default function DailyHabits() {
+  const { colors, isDark } = useTheme();
   const [habits, setHabits] = useState<Habit[]>([
-    { id: "1", text: "Hit 4 workouts this week", icon: "barbell-outline", completed: true },
-    { id: "2", text: "Drink 3L of water", icon: "water-outline", completed: false },
+    {
+      id: "1",
+      text: "Hit 4 workouts this week",
+      icon: "barbell-outline",
+      completed: true,
+    },
+    {
+      id: "2",
+      text: "Drink 3L of water",
+      icon: "water-outline",
+      completed: false,
+    },
   ]);
   const [isMenuVisible, setIsMenuVisible] = useState(false);
 
   // --- LOGIC ---
   const toggleHabit = (id: string) => {
     setHabits((current) =>
-      current.map((h) => (h.id === id ? { ...h, completed: !h.completed } : h))
+      current.map((h) => (h.id === id ? { ...h, completed: !h.completed } : h)),
     );
   };
 
@@ -56,7 +68,10 @@ export default function DailyHabits() {
     }
     if (habits.find((h) => h.text === template.text)) return;
 
-    setHabits([...habits, { id: Math.random().toString(), ...template, completed: false }]);
+    setHabits([
+      ...habits,
+      { id: Math.random().toString(), ...template, completed: false },
+    ]);
     setIsMenuVisible(false);
   };
 
@@ -79,28 +94,43 @@ export default function DailyHabits() {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <View style={styles.habitsContainer}>
+      <View
+        style={[styles.habitsContainer, { backgroundColor: colors.background }]}
+      >
         {/* HEADER SECTION */}
         <View style={styles.headerRow}>
           <View style={styles.titleContainer}>
-            <Text style={styles.sectionTitle}>DAILY HABITS</Text>
-            <Text style={styles.sectionSubtitle}>{habits.length}/4 active habits</Text>
+            <Text style={[styles.sectionTitle, { color: colors.text }]}>
+              DAILY HABITS
+            </Text>
+            <Text
+              style={[styles.sectionSubtitle, { color: colors.secondaryText }]}
+            >
+              {habits.length}/4 active habits
+            </Text>
           </View>
           <TouchableOpacity
-            style={styles.addButton}
+            style={[
+              styles.addButton,
+              { backgroundColor: isDark ? colors.surface : "#000" },
+            ]}
             onPress={() => setIsMenuVisible(true)}
             activeOpacity={0.7}
           >
-            <Ionicons name="add" size={26} color="#fff" />
+            <Ionicons
+              name="add"
+              size={26}
+              color={isDark ? colors.text : "#fff"}
+            />
           </TouchableOpacity>
         </View>
 
         {/* HABIT LIST */}
         <ScrollView showsVerticalScrollIndicator={false}>
           {habits.map((habit) => (
-            <Animated.View 
-              key={habit.id} 
-              entering={FadeInRight.duration(400)} 
+            <Animated.View
+              key={habit.id}
+              entering={FadeInRight.duration(400)}
               layout={Layout.springify()}
             >
               <Swipeable
@@ -110,27 +140,49 @@ export default function DailyHabits() {
                 containerStyle={styles.swipeContainer}
               >
                 <TouchableOpacity
-                  style={[styles.habitCard, habit.completed && styles.habitCardDone]}
+                  style={[
+                    styles.habitCard,
+                    {
+                      backgroundColor: colors.surface,
+                      borderColor: colors.border,
+                    },
+                    habit.completed && {
+                      backgroundColor: isDark ? "#38383c" : "#f9f9f9",
+                      borderColor: isDark ? "#38383c" : "#f9f9f9",
+                    },
+                  ]}
                   onPress={() => toggleHabit(habit.id)}
                   activeOpacity={1}
                 >
-                  <View style={[styles.iconBox, habit.completed && styles.iconBoxDone]}>
+                  <View
+                    style={[
+                      styles.iconBox,
+                      { backgroundColor: colors.border },
+                      habit.completed && { backgroundColor: colors.text },
+                    ]}
+                  >
                     <Ionicons
                       name={habit.icon as any}
                       size={22}
-                      color={habit.completed ? "#fff" : "#000"}
+                      color={habit.completed ? colors.surface : colors.text}
                     />
                   </View>
                   <Text
-                    style={[styles.habitText, habit.completed && styles.habitTextDone]}
+                    style={[
+                      styles.habitText,
+                      { color: colors.text },
+                      habit.completed && { color: colors.secondaryText },
+                    ]}
                     numberOfLines={1}
                   >
                     {habit.text}
                   </Text>
                   <Ionicons
-                    name={habit.completed ? "checkmark-circle" : "ellipse-outline"}
+                    name={
+                      habit.completed ? "checkmark-circle" : "ellipse-outline"
+                    }
                     size={24}
-                    color={habit.completed ? "#000" : "#ddd"}
+                    color={habit.completed ? colors.text : colors.border}
                   />
                 </TouchableOpacity>
               </Swipeable>
@@ -142,27 +194,51 @@ export default function DailyHabits() {
         <Modal visible={isMenuVisible} animationType="slide" transparent>
           <View style={styles.modalOverlay}>
             <View style={styles.menuCard}>
-              <Text style={styles.menuTitle}>CHOOSE A HABIT</Text>
+              <Text style={[styles.menuTitle, { color: colors.secondaryText }]}>
+                CHOOSE A HABIT
+              </Text>
               <ScrollView showsVerticalScrollIndicator={false}>
                 {AVAILABLE_HABITS.map((item, idx) => (
                   <TouchableOpacity
                     key={idx}
-                    style={styles.menuItem}
+                    style={[
+                      styles.menuItem,
+                      { borderBottomColor: colors.border },
+                    ]}
                     onPress={() => addHabit(item)}
                   >
-                    <View style={styles.menuIconBox}>
-                      <Ionicons name={item.icon as any} size={20} color="#000" />
+                    <View
+                      style={[
+                        styles.menuIconBox,
+                        { backgroundColor: colors.border },
+                      ]}
+                    >
+                      <Ionicons
+                        name={item.icon as any}
+                        size={20}
+                        color={colors.text}
+                      />
                     </View>
-                    <Text style={styles.menuItemText}>{item.text}</Text>
-                    <Ionicons name="chevron-forward" size={18} color="#ccc" />
+                    <Text style={[styles.menuItemText, { color: colors.text }]}>
+                      {item.text}
+                    </Text>
+                    <Ionicons
+                      name="chevron-forward"
+                      size={18}
+                      color={colors.secondaryText}
+                    />
                   </TouchableOpacity>
                 ))}
               </ScrollView>
               <TouchableOpacity
-                style={styles.closeButton}
+                style={[styles.closeButton, { backgroundColor: colors.text }]}
                 onPress={() => setIsMenuVisible(false)}
               >
-                <Text style={styles.closeButtonText}>CANCEL</Text>
+                <Text
+                  style={[styles.closeButtonText, { color: colors.surface }]}
+                >
+                  CANCEL
+                </Text>
               </TouchableOpacity>
             </View>
           </View>
@@ -211,7 +287,7 @@ const styles = StyleSheet.create({
   },
   swipeContainer: {
     marginBottom: 12,
-    overflow: 'visible', // Keeps shadows visible
+    overflow: "visible", // Keeps shadows visible
   },
   habitCard: {
     flexDirection: "row",
