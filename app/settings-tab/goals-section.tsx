@@ -3,6 +3,8 @@ import { View, StyleSheet } from "react-native";
 import { SettingsItem, SectionHeader } from "../components/settings-item";
 import { useTheme } from "@react-navigation/native";
 import { Background } from "@react-navigation/elements";
+import { useMetrics } from "../context/MetricsContext";
+import { formatHeight, formatWeight } from "../utils/metricsConverter";
 
 // Define the FieldType here or import it from a shared types file
 type FieldType =
@@ -21,7 +23,6 @@ interface GoalsSectionProps {
   onEdit: (field: FieldType, value: string) => void;
 }
 
-
 export default function GoalsSection({
   gender,
   height,
@@ -31,20 +32,24 @@ export default function GoalsSection({
   onEdit,
 }: GoalsSectionProps) {
   const { colors } = useTheme();
+  const { isMetric } = useMetrics();
+  const heightNum = parseFloat(height) || 0;
+  const currentWeightNum = parseFloat(currentWeight) || 0;
+  const goalWeightNum = parseFloat(goalWeight) || 0;
   return (
     <View style={styles.container}>
-      <View style={[styles.card,{backgroundColor: colors.card}]}>
+      <View style={[styles.card, { backgroundColor: colors.card }]}>
         <SectionHeader title="MY INFO" />
         <SettingsItem
           icon="resize"
           label="Height"
-          value={`${height} cm`}
+          value={formatHeight(heightNum, isMetric)}
           onPress={() => onEdit("height", height)}
         />
         <SettingsItem
           icon="body"
           label="Current Weight"
-          value={`${currentWeight} kg`}
+          value={formatWeight(currentWeightNum, isMetric)}
           onPress={() => onEdit("currentWeight", currentWeight)}
         />
         <SettingsItem
@@ -55,12 +60,12 @@ export default function GoalsSection({
         />
       </View>
 
-      <View style={[styles.card,{backgroundColor: colors.card}]}>
+      <View style={[styles.card, { backgroundColor: colors.card }]}>
         <SectionHeader title="MY GOALS" />
         <SettingsItem
           icon="flag"
           label="Goal Weight"
-          value={`${goalWeight} kg`}
+          value={formatWeight(goalWeightNum, isMetric)}
           onPress={() => onEdit("goalWeight", goalWeight)}
         />
         <SettingsItem

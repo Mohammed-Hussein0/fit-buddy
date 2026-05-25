@@ -14,6 +14,8 @@ import {
 import Ionicons from "@expo/vector-icons/Ionicons";
 import Slider from "@react-native-community/slider";
 import { UserProfile } from "../context/UserInfo";
+import { useMetrics } from "../context/MetricsContext";
+import { kgToLbs, lbsToKg } from "../utils/metricsConverter";
 
 type FieldType = keyof UserProfile | null;
 
@@ -38,9 +40,17 @@ export default function SettingsEditModal({
   onClose,
   onSave,
 }: SettingsEditModalProps) {
+  const { isMetric } = useMetrics();
   const inputRef = useRef<TextInput>(null);
   const shouldShowTextInput =
     editingField !== "gender" && editingField !== "nutrition";
+
+  const unitLabel =
+    editingField === "currentWeight" || editingField === "goalWeight"
+      ? isMetric
+        ? "kg"
+        : "lbs"
+      : "cm";
 
   const handleModalShow = useCallback(() => {
     // Android sometimes ignores immediate autofocus inside Modal; defer one frame.
@@ -143,7 +153,9 @@ export default function SettingsEditModal({
                       style={styles.infoIcon}
                     />
                     <Text style={styles.helperText}>
-                      Broad healthy range: {suggestMin}kg - {suggestMax}kg
+                      Broad healthy range: {suggestMin}
+                      {unitLabel} - {suggestMax}
+                      {unitLabel}
                     </Text>
                   </View>
                 )}

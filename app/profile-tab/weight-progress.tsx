@@ -7,6 +7,8 @@ import {
   Dimensions,
 } from "react-native";
 import { useTheme } from "../context/ThemeContext";
+import { useMetrics } from "../context/MetricsContext";
+import { kgToLbs } from "../utils/metricsConverter";
 import Svg, { Path, Circle, Line, Rect } from "react-native-svg";
 
 const weightHistory = [
@@ -49,6 +51,7 @@ const defaultPeriodIndex = 2;
 export default function WeightChart() {
   const { width } = Dimensions.get("window");
   const { colors } = useTheme();
+  const { isMetric } = useMetrics();
   const chartWidth = Math.max(260, width - 96);
   const chartHeight = 210;
   const [periodIndex, setPeriodIndex] = useState(defaultPeriodIndex);
@@ -73,7 +76,7 @@ export default function WeightChart() {
 
   const points = filteredHistory.map((item) => ({
     x: parseDate(item.date),
-    y: item.weight,
+    y: isMetric ? item.weight : kgToLbs(item.weight),
     label: formatDateLabel(item.date),
   }));
 

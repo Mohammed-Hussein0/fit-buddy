@@ -12,6 +12,7 @@ import { View, ActivityIndicator } from "react-native";
 import { AuthProvider } from "./context/auth";
 import { UserProvider } from "./context/UserInfo";
 import { ThemeContextProvider, useTheme } from "./context/ThemeContext";
+import { MetricsContextProvider } from "./context/MetricsContext";
 
 export default function RootLayout() {
   const router = useRouter();
@@ -74,7 +75,9 @@ export default function RootLayout() {
     <AuthProvider>
       <UserProvider>
         <ThemeContextProvider>
-          <AppNavigation />
+          <MetricsContextProvider>
+            <AppNavigation />
+          </MetricsContextProvider>
         </ThemeContextProvider>
       </UserProvider>
     </AuthProvider>

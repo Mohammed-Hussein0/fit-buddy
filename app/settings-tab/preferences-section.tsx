@@ -2,9 +2,11 @@ import React from "react";
 import { View, StyleSheet } from "react-native";
 import { SettingsItem, SectionHeader } from "../components/settings-item";
 import { useTheme } from "../context/ThemeContext";
+import { useMetrics } from "../context/MetricsContext";
 
 export default function AppPreferences() {
   const { theme, setTheme, colors } = useTheme();
+  const { system, setSystem, isMetric } = useMetrics();
   const isDarkMode = theme === "dark";
 
   return (
@@ -34,8 +36,10 @@ export default function AppPreferences() {
         <SettingsItem
           icon="resize"
           label="Units"
-          value="Metric (kg, cm)"
-          onPress={() => {}}
+          isSwitch={true}
+          switchValue={isMetric}
+          onSwitch={(value) => setSystem(value ? "metric" : "imperial")}
+          value={isMetric ? "Metric (kg, cm)" : "Imperial (lbs, in)"}
         />
         <SettingsItem
           icon="sync"
