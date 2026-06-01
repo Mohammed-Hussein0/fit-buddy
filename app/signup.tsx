@@ -1,21 +1,31 @@
+import { Stack, useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  Alert,
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from "react-native";
 import { supabase } from "../supabase";
-import { useRouter } from "expo-router";
-import { Stack } from "expo-router";
 import { useTheme } from "./context/ThemeContext";
+function checkPasswordStrength(password: string): { label: string; color: string; width: string } {
+  let strength = 0;
+  if (password.length >= 8) strength++;
+  if (/[A-Z]/.test(password)) strength++;
+  if (/[0-9]/.test(password)) strength++;
+  if (/[^A-Za-z0-9]/.test(password)) strength++;
 
+  if (strength <= 1) return { label: "😢 Weak", color: "#e74c3c", width: "25%" };
+  if (strength === 2) return { label: "😐 Fair", color: "#e67e22", width: "50%" };
+  if (strength === 3) return { label: "😊 Good", color: "#f1c40f", width: "75%" };
+  return { label: "💪 Strong", color: "#2ecc71", width: "100%" };
+}
 export default function SignUpScreen() {
   const router = useRouter();
   const { colors } = useTheme();
@@ -23,6 +33,8 @@ export default function SignUpScreen() {
   const [password, setPassword] = useState("");
   const [username, setUsername] = useState("");
   const [loading, setLoading] = useState(false);
+  const [strength, setStrength] = useState<{ label: string; color: string; width: string } | null>(null);
+  const [showPassword, setShowPassword] = useState(false);
 
   async function signUpWithEmail() {
     if (!email || !password || !username) {
@@ -93,6 +105,7 @@ export default function SignUpScreen() {
             value={username}
             placeholder="johndoe"
             placeholderTextColor={colors.secondaryText}
+            
             autoCapitalize="none"
           />
 
@@ -124,12 +137,29 @@ export default function SignUpScreen() {
                 backgroundColor: colors.surface,
               },
             ]}
-            onChangeText={setPassword}
-            value={password}
-            secureTextEntry={true}
+            onChangeText={(text) => {
+  setPassword(text);
+  setStrength(text.length > 0 ? checkPasswordStrength(text) : null);
+}}
+         value={password}
+            secureTextEntry={!showPassword}
+            maxLength={16}
             placeholder="Create a password"
             placeholderTextColor={colors.secondaryText}
           />
+<TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={{ marginTop: 8, alignItems: "flex-end" }}>
+  <Text style={{ color: colors.secondaryText, fontSize: 13 }}>
+    {showPassword ? "🙈 Hide Password" : "👁 Show Password"}
+  </Text>
+</TouchableOpacity>
+          {strength && (
+            <View style={{ marginTop: 8 }}>
+              <View style={{ height: 6, backgroundColor: "#e0e0e0", borderRadius: 3 }}>
+                <View style={{ width: strength.width as any, height: 6, backgroundColor: strength.color, borderRadius: 3 }} />
+              </View>
+<Text style={{ color: strength.color, marginTop: 4, fontSize: 12 }}>{strength.label}</Text>
+            </View>
+          )}
         </View>
 
         <TouchableOpacity
