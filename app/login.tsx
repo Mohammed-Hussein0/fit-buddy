@@ -1,20 +1,21 @@
+import { useRouter } from "expo-router";
 import React, { useState } from "react";
 import {
-  View,
+  ActivityIndicator,
+  Alert,
+  Image,
+  KeyboardAvoidingView,
+  Platform,
+  SafeAreaView,
+  ScrollView,
+  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
-  Alert,
-  ActivityIndicator,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  SafeAreaView,
+  View
 } from "react-native";
-import GoogleAuthButton from "./components/GoogleAuthButton";
 import { supabase } from "../supabase";
-import { useRouter } from "expo-router";
+import GoogleAuthButton from "./components/GoogleAuthButton";
 import { useTheme } from "./context/ThemeContext";
 
 export default function LoginScreen() {
@@ -23,6 +24,7 @@ export default function LoginScreen() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
 
   async function signInWithEmail() {
     setLoading(true);
@@ -57,7 +59,10 @@ export default function LoginScreen() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={styles.innerContent}>
-            <View style={styles.headerContainer}>
+            <View style={[styles.headerContainer, { alignItems: "center" }]}>
+              <View style={{ width: 170, height: 170, borderRadius: 85, backgroundColor: "#ffffff", alignSelf: "center", justifyContent: "center", alignItems: "center", marginBottom: 20, shadowColor: "#000", shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.1, shadowRadius: 4, elevation: 3 }}>
+                 <Image source={require("../assets/images/LogoNameNoBack.png")} style={{ width: 250, height: 250, resizeMode: "contain" }} />
+              </View>
               <Text style={[styles.headerTitle, { color: colors.text }]}>
                 Welcome Back
               </Text>
@@ -101,10 +106,15 @@ export default function LoginScreen() {
                 ]}
                 onChangeText={setPassword}
                 value={password}
-                secureTextEntry={true}
+                secureTextEntry={!showPassword}
                 placeholder="Enter your password"
                 placeholderTextColor={colors.secondaryText}
               />
+              <TouchableOpacity onPress={() => setShowPassword(!showPassword)} style={{ marginTop: 8, alignItems: "flex-end" }}>
+                <Text style={{ color: colors.secondaryText, fontSize: 13 }}>
+                  {showPassword ? "🙈 Hide Password" : "👁 Show Password"}
+                </Text>
+              </TouchableOpacity>
             </View>
 
             <TouchableOpacity
